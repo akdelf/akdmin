@@ -2,7 +2,7 @@
 
 	class AKdmin {
 
-		#
+		#фильтр xss уязвимостей
 		function xss($value) {
 			$value = htmlentities($value, ENT_QUOTES, 'UTF-8');
 			$value = htmlspecialchars($value);
@@ -25,12 +25,22 @@
 				}	
 			else
 				return  $default;
-				}
+		}
 
-		# загружаем схему
-		function load() {
+		# загружаем модель
+		function load($map) {
+	
+			$f_xml = site_fold_ad.'xml/'. $map.'.xml';
+	    
+    		if (!file_exists($f_xml)){
+				echo('not found shema');
+				exit;
+			} 
 
-		}		
+			return simplexml_load_file($f_xml);
+
+		}
+
 
 
 	}

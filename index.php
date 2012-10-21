@@ -1,0 +1,3 @@
+<?php
+
+	require('akdmin.php');
