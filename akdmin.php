@@ -1,6 +1,28 @@
-<? 
+<?php 
+
+	require('fAKdb.php');
 
 	class AKdmin {
+
+		private $main = array(); # главные настройки
+		private $order = null; # текущие параметры сортировки
+		private $limit = 15; # текущее кол-во элементов в таблице
+
+
+		function __construct() {
+
+		}
+
+		
+		function init() {
+			
+			foreach ($xml->xpath('/items/main') as $key => $mainitem) {
+				$this->main[]
+			}	
+					
+		}
+
+
 
 		#фильтр xss уязвимостей
 		function xss($value) {
@@ -10,7 +32,7 @@
 			$value = stripslashes ($value);
 	    
     		return $value;
-    		}
+    	}
 
 
 		# обработка входящих параметров
@@ -38,6 +60,26 @@
 			} 
 
 			return simplexml_load_file($f_xml);
+
+		}
+
+
+		# иницилиазция главных настроек схемы
+		function mainitems() {
+
+			foreach ($xml->xpath('/items/main') as $key => $mainitem) {
+				$this->main[$key];
+			}
+
+			return $this;	
+
+		}
+
+
+		# получаем все записи текущей таблицы
+		function list() {
+
+			$this->maintable = Table($this->main('table'));
 
 		}
 

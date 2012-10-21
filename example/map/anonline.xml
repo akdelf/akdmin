@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF8"?>
+<items>
+<main>
+	<table>news</table>
+	<order>news_id</order>
+	<order_type>DESC</order_type>
+	<increment>news_id</increment>
+	<title>АН-Online</title>
+	<where>article = 1</where>
+	<vbutton>
+		<link>news_test/{%}/</link>
+	</vbutton>
+	<cache>cache/index.html</cache>
+	<search>title,text,anons</search>
+</main>
+<item>
+	<column>news_id</column>
+	<title>ID</title>
+	<type>increment</type>
+	<view>
+		<table>True</table>
+		<form>False</form>
+	</view>
+	<hint>Порядковый номер новости</hint>
+</item>
+<item>
+	<column>title</column>
+	<title>Заголовок</title>
+	<type>text</type>
+	<col>120</col>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<maxsize>80</maxsize>
+	<hint>Заголовок</hint>
+	<typograf>1</typograf>
+</item>
+<item>
+	<column>rsstitle</column>
+	<title>Заголовок RSS</title>
+	<type>text</type>
+	<col>140</col>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+	<maxsize>255</maxsize>
+	<hint>Заголовок</hint>
+	<typograf>1</typograf>
+</item>
+<item>
+	<column>priority</column>
+	<title>R</title>
+	<type>spin</type>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<exclusive>
+		<value>0</value>
+	</exclusive>
+	<hint>Приоритет статьи</hint>
+</item>
+<item>
+	<column>or</column>
+	<title>oR</title>
+	<type>spin</type>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<exclusive>
+		<value>0</value>
+	</exclusive>
+	<hint>Приоритет статьи</hint>
+</item>
+<item>
+	<column>nr</column>
+	<title>nR</title>
+	<type>spin</type>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<exclusive>
+		<value>0</value>
+		<where>sitepart_id={sitepart_id}</where>
+	</exclusive>
+</item>
+<item>
+	<column>region_id</column>
+	<title>Регион</title>
+	<type>lookup</type>
+	<lookup>
+		<table>region</table>
+		<id>region_id</id>
+		<column>regionname</column>
+		<order>regionname</order>
+		<nulltxt>Без региона</nulltxt>
+	</lookup>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+	<filter>False</filter>
+</item>
+<item>
+	<id>siteparts</id>
+	<column>sitepart_id</column>
+	<title>Рубрика</title>
+	<type>lookup</type>
+	<lookup>
+		<table>siteparts</table>
+		<id>sitepart_id</id>
+		<column>partname</column>
+		<order>partname</order>
+		<where>visibled = 1</where>
+	</lookup>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<filter>True</filter>
+	<hint>Рубрика</hint>
+</item>
+<item>
+	<column>part_id</column>
+	<title>Рубрика RSS</title>
+	<type>lookup</type>
+	<lookup>
+		<table>feedparts</table>
+		<id>fpart_id</id>
+		<column>fpartname</column>
+		<order>fpartname</order>
+		<nulltxt>Не отправлять в RSS</nulltxt>
+	</lookup>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<filter>True</filter>
+</item>
+<item>
+	<column>blog_id</column>
+	<title>Блог</title>
+	<type>lookup</type>
+	<lookup>
+		<table>blogs</table>
+		<id>blog_id</id>
+		<column>btitle</column>
+		<order>btitle</order>
+	</lookup>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<filter>True</filter>
+</item>
+<item>
+	<column>anons</column>
+	<title>Анонс</title>
+	<type>textarea</type>
+	<hint>Заголовок стаьи</hint>
+	<col>100</col>
+	<row>10</row>
+	<maxsize>15000</maxsize>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+	<typograf>1</typograf>
+</item>
+<item>
+	<column>text</column>
+	<title>Текст новости</title>
+	<type>textareatiny</type>
+	<hint>Заголовок стаьи</hint>
+	<col>60</col>
+	<row>40</row>
+	<tipograf>
+		<type>tags</type>
+		<killstyle>true</killstyle>
+	</tipograf>
+	<typograf>1</typograf>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>subject_id</column>
+	<title>Сюжет</title>
+	<type>lookup</type>
+	<lookup>
+		<table>subject</table>
+		<id>subject_id</id>
+		<column>subname</column>
+		<order>subname</order>
+	</lookup>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<filter>True</filter>
+</item>
+<item>
+	<column>keywords</column>
+	<title>Ключевые слова</title>
+	<type>textarea</type>
+	<row>2</row>
+	<col>100</col>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>img</column>
+	<title>Фото</title>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+	<type>file</type>
+	<folder>pub/images/arhnews</folder>
+</item>
+<item>
+	<column>alt</column>
+	<title>Подпись к фото</title>
+	<type>text</type>
+	<hint>Заголовок стаьи</hint>
+	<col>100</col>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>author</column>
+	<title>Автор текстом</title>
+	<type>text</type>
+	<col>100</col>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>author_id</column>
+	<title>Автор(выбрать)</title>
+	<type>lookup</type>
+	<lookup>
+		<table>authors</table>
+		<id>author_id</id>
+		<column>authorname</column>
+		<order>authorname</order>
+	</lookup>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+	<filter>False</filter>
+</item>
+<item>
+	<column>date_insert</column>
+	<title>Дата / Время</title>
+	<type>datetime</type>
+	<view>
+		<table>True</table>
+		<form>False</form>
+	</view>
+</item>
+<item>
+	<column>action</column>
+	<title>Пб</title>
+	<type>checkdate</type>
+	<fieldate>date_insert</fieldate>
+	<col>100</col>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<hint>Публиковать на главной</hint>
+</item>
+<item>
+	<column>main</column>
+	<title>Гл</title>
+	<type>checkbox</type>
+	<col>100</col>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+	<hint>Публиковать на главной</hint>
+</item>
+<item>
+	<column>article</column>
+	<type>value</type>
+	<value>1</value>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>unique</column>
+	<title>Соб.инф</title>
+	<type>checkbox</type>
+	<col>100</col>
+	<view>
+		<table>True</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>user_id</column>
+	<title>Добавил</title>
+	<type>lookup</type>
+	<lookup>
+		<table>users</table>
+		<id>user_id</id>
+		<column>name</column>
+		<order>name</order>
+	</lookup>
+	<view>
+		<table>True</table>
+		<form>False</form>
+	</view>
+	<filter>True</filter>
+</item>
+<item>
+	<column>commented</column>
+	<title>Комментарии</title>
+	<type>lookup</type>
+	<default>2</default>
+	<lookup>
+		<table>comments_type</table>
+		<id>type_id</id>
+		<column>typename</column>
+		<order>type_id</order>
+		<nulltxt>Обычный</nulltxt>
+	</lookup>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>video</column>
+	<title>с Видео</title>
+	<type>checkbox</type>
+	<col>100</col>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+	<hint>Публиковать на главной</hint>
+</item>
+<item>
+	<column>user_id</column>
+	<type>user</type>
+	<access>
+		<groups>edition</groups>
+	</access>
+	<user_type>insert</user_type>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+<item>
+	<column>url_request</column>
+	<title>Перенаправить</title>
+	<type>text</type>
+	<col>120</col>
+	<view>
+		<table>False</table>
+		<form>True</form>
+	</view>
+</item>
+</items>
