@@ -7,6 +7,7 @@
 		private $main = array(); # главные настройки
 		private $order = null; # текущие параметры сортировки
 		private $limit = 15; # текущее кол-во элементов в таблице
+		private $select = array(); #список полей которые участвуют в запросе
 
 
 		function __construct() {
@@ -14,15 +15,6 @@
 		}
 
 		
-		function init() {
-			
-			foreach ($xml->xpath('/items/main') as $key => $mainitem) {
-				$this->main[]
-			}	
-					
-		}
-
-
 
 		#фильтр xss уязвимостей
 		function xss($value) {
@@ -35,7 +27,23 @@
     	}
 
 
-		# обработка входящих параметров
+		#входящие параметры
+		function gets() {
+			
+			$map = $this->gparam('ad', ''); # текущая схема
+			if ($map == '')
+				$this->erexit();
+			else
+				$this->map = $map;
+
+			$this->limit = $this->gparam('l', 15, 'int'); # кол-во записей на старнице 
+			$this->order = $this->gparam('ord', ''); # текущая сортировка 
+
+			return $this;
+
+		}
+
+		# обработка входящего параметра
 		function gparam($name, $default = null, $type = 'str') {
 
 			if (isset($_GET[$name])) {
@@ -79,9 +87,19 @@
 		# получаем все записи текущей таблицы
 		function list() {
 
-			$this->maintable = Table($this->main('table'));
+			$maintable = Table($this->main('table')); # формируем запрос к таблице
+			$maintable->order($this->order); # текущая сортировка
+			$maintable->limit($this->limit); # количество записей
+
 
 		}
+
+		#выход с критической ошибкой
+		function erexit($errstr){
+			echo $errstr;
+			exit;
+		}
+
 
 
 
