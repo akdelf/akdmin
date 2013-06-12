@@ -2,35 +2,14 @@
     "name": "akdelf/akdmin",
     "description": "php autoadmin",
     "keywords": ["admin"],
-    "version":"1.0.0",
+    "version": "1.4.0",
 
     "require":{
-        "php":">=5.2.0",
-        "akdelf/korm":"1.0.0"
+        "php": ">=5.2.0"
     },
 
     "autoload": {
         "files": ["lib/akdmin.php"]
-    },
+    }
 
-   "repositories":[
-        {
-            "type":"package",
-            "package":{
-                "name":"akdelf/korm",
-                "version":"1.0.0",
-                "source":{
-                    "type":"git",
-                    "url":"https://github.com/akdelf/korm.git",
-                    "reference":"master"
-                },
-                "autoload":{
-                    "files":["korm.php"]
-                }
-            }    
-
-        }
-
-    ]
-}    
-           
+}
