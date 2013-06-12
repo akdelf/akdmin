@@ -6,12 +6,12 @@
     "repositories":[
         {
             "type":"vcs",
-            "url":"https://github.com/akdelf/korm"
+            "url":"https://github.com/akdelf/korm.git"
         }    
     ],
 
     "require":{
-        "akdelf/korm":"dev-master"
+        "akdelf/korm":"*"
         },
 
     "autoload": {
