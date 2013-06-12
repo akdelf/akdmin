@@ -5,12 +5,13 @@
     "version":"1.0.0",
     "repositories":[
         {
-            "type":"vcs",
+            "type":"git",
             "url":"https://github.com/akdelf/korm.git"
         }    
     ],
 
     "require":{
+        "php":">=5.2.0",
         "akdelf/korm":"dev-master"
     },
 
