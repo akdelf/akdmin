@@ -11,9 +11,9 @@
     ],
 
     "require":{
-        "akdelf/korm":"*"
-        },
-
+        "akdelf/korm":"dev-master"
+    },
+    
     "autoload": {
         "files": ["lib/akdmin.php"]
     }    
