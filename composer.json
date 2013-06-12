@@ -13,11 +13,24 @@
         "files": ["lib/akdmin.php"]
     },
 
-    "repositories":[
+   "repositories":[
         {
-            "type":"git",
-            "url":"https://github.com/akdelf/korm.git"
-        }    
-    ]    
+            "type":"package",
+            "package":{
+                "name":"akdelf/korm",
+                "version":"1.0.0",
+                "source":{
+                    "type":"git",
+                    "url":"https://github.com/akdelf/korm.git",
+                    "reference":"master"
+                },
+                "autoload":{
+                    "files":["korm.php"]
+                }
+            }    
 
-}
+        }
+
+    ]
+}    
+           
