@@ -4,18 +4,6 @@
     "keywords": ["admin"],
     "autoload": {
         "files": ["lib/akdmin.php"]
-    },
-
-    "require": {
-        "php":">=5.0.0",
-        "akdelf/korm":"dev-master"
-    },
-
-    "repositories":[
-        {
-            "type":"git",
-            "url":"http://github.com/akdelf/korm"
-        }
-    ]
+    }
     
 }
