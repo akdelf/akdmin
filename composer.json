@@ -11,7 +11,7 @@
     ],
 
     "require":{
-        "korm/korm":"dev-master"
+        "akdelf/korm":"dev-master"
         },
 
     "autoload": {
