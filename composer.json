@@ -3,12 +3,6 @@
     "description": "php autoadmin",
     "keywords": ["admin"],
     "version":"1.0.0",
-    "repositories":[
-        {
-            "type":"git",
-            "url":"https://github.com/akdelf/korm.git"
-        }    
-    ],
 
     "require":{
         "php":">=5.2.0",
@@ -17,6 +11,13 @@
 
     "autoload": {
         "files": ["lib/akdmin.php"]
-    }    
+    },
+
+    "repositories":[
+        {
+            "type":"git",
+            "url":"https://github.com/akdelf/korm.git"
+        }    
+    ]    
 
 }
