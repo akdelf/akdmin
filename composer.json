@@ -15,6 +15,6 @@
 
     "autoload": {
         "files": ["lib/akdmin.php"]
-    },    
+    }    
 
 }
