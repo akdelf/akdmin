@@ -6,7 +6,7 @@
 
     "require":{
         "php":">=5.2.0",
-        "akdelf/korm":"dev-master"
+        "akdelf/korm":"1.0.0"
     },
 
     "autoload": {
