@@ -194,7 +194,7 @@ session_start();
  require_once ('acess.php');
  
  require_once ('filter.php');
- require_once ('lib/file.php');
+ require_once ('file.php');
 
 
  $filter = new filter;
