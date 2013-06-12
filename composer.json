@@ -2,10 +2,6 @@
     "name": "akdelf/akdmin",
     "description": "php autoadmin",
     "keywords": ["admin"],
-    "autoload": {
-        "files": ["lib/akdmin.php"]
-    },
-
     "repositories":[
         {
             "type":"git",
@@ -15,6 +11,10 @@
 
     "require":{
         "akdelf/korm":"dev-master"
-        }
+        },
+
+    "autoload": {
+        "files": ["lib/akdmin.php"]
+    },    
 
 }
