@@ -1,8 +1,8 @@
 {
-    
     "name": "akdelf/akdmin",
     "description": "php autoadmin",
     "keywords": ["admin"],
+    "version":"1.0.0",
     "repositories":[
         {
             "type":"vcs",
@@ -13,7 +13,7 @@
     "require":{
         "akdelf/korm":"dev-master"
     },
-    
+
     "autoload": {
         "files": ["lib/akdmin.php"]
     }    
