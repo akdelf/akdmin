@@ -1511,7 +1511,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 	echo '<p>';
 	
 	if ($_SESSION['readonly'] == 0){
-		echo('<INPUT TYPE = "submit" VALUE="Сохранить">');
+		echo('<INPUT accesskey="s" TYPE = "submit" VALUE="Сохранить">');
 	}
 
 	echo '
