@@ -846,14 +846,14 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			if ($tables != '') $sqlres .= $tables;
 			if ($join != '') $sqlres .= $join;
 	
-			if ($like_id <> 0){
+			if ($like_id > 0){
 				$where_like = separ($increment).'= "'.$like_id.'"';
 				$where .= SqlAddSpec($where, 1).$where_like;
 			}	
 			
-			if ($where != '')
+			if ($where !== '')
 				$sqlres .= $where;
-			if ($order_value != '')
+			if ($order_value !== '')
 				$sqlres .= $order_value;
 			$sqlres .= $limit;
 			
