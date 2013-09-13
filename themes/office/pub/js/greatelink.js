@@ -215,6 +215,7 @@ function GreateLink(admin, actions, param_name, param_value)
 			else {	
 				if 	(document.getElementById("forms").style.visibility == "visible"){
 					document.getElementById("forms").style.visibility = "hidden";
+					$('.mce-tinymce').hide();
 					scroll(0, 0);
 				}	
 			}	

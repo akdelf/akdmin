@@ -17,18 +17,18 @@ function createHttpRequest() {
 }
 
 
-
 function sendRequest(file, _resultId, request)
 {
   
-   
+  	 
 	resultId = _resultId;
-    document.getElementById(resultId).innerHTML = 'Идет загрузка данных&hellip';
-   	httpRequest.open('GET', file);
+	document.getElementById(resultId).innerHTML = 'Идет загрузка данных&hellip';
+	httpRequest.open('GET', file);
 	httpRequest.onreadystatechange = request;
 	httpRequest.send(null);
+
 	
-  
+	  
 }
 
 
@@ -83,9 +83,8 @@ function FormToPost(obj, filePost, fileres, result_id)
    
    var send_post = '';
    var elcount = 0;
-   
-     
-	for(var k = 0; k < obj.elements.length; k++) {
+
+    for(var k = 0; k < obj.elements.length; k++) {
         if  ((obj.elements[k].type != "button") & (obj.elements[k].type != "submit") & (obj.elements[k].type != "file")) {
 		    if (obj.elements[k].type == "checkbox"){
 			   if (elcount > 0) send_post += '&';
