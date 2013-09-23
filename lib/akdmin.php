@@ -1801,8 +1801,10 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$f_exp = fileexpansion($_FILES[$column]["name"]);
 						if (in_array($f_exp, array('jpg','jpeg','JPG', 'gif', 'png', 'swf'))) {
 							$newfilename = site_fold.$item[$indx]->folder.'/'.$inc_indx.'.'.$f_exp;
-							if (copy($_FILES[$column]["tmp_name"], $newfilename))
+							if (copy($_FILES[$column]["tmp_name"], $newfilename)) {
 								$file_update = mysql_query('UPDATE '.$maintable.' SET '.$column.' = '."'".$f_exp."'".' WHERE '.$increment.' = '.$inc_indx);
+								chmod($newfilename, 0666);
+							}
 							else
 								echo "<SCRIPT>alert('Файл '".$newfilename."'не сохранен!')</SCRIPT>";
 						}
