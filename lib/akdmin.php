@@ -815,7 +815,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			if ($join != '') $sqlres .= $join;
 			//if ($where_lookup != '')
 			//	$where .= SqlAddSpec($where, 1).$where_lookup;
-			
+			if (trim($where) !== '')
+				$where = ' WHERE '.$where;
 
 			$per_page = (isset($_GET['limit'])) ? (int)($_GET['limit']) : 20;
 			$max_sql = 'SELECT count('.$increment.')'.' FROM '.$maintable.$tables.$where.$order_value;
@@ -850,22 +851,17 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$where .= SqlAddSpec($where, 1).$where_like;
 			}	
 			
+			if ($where !== '')
+				$sqlres .= $where;
+			if ($order_value !== '')
+				$sqlres .= $order_value;
+			$sqlres .= $limit;
 			
+			
+
 		}
 
-		if (trim($where) !== '') {
-			$where = ' WHERE '.$where;
-			$sqlres .= $where;
-		}
-
-		if ($order_value !== '')
-			$sqlres .= $order_value;
-
-		$sqlres .= $limit;
-
-
-		echo $sqlres; exit;
-
+		//echo $sqlres;
 		$selectres = mysql_query($sqlres) or write_log('Ошибка MySQL: '.mysql_error().':'.$sqlres); //подсчет;
 		if (@mysql_num_rows($selectres) != 0) {
 			if ($action != 'selectrow')
@@ -1805,10 +1801,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$f_exp = fileexpansion($_FILES[$column]["name"]);
 						if (in_array($f_exp, array('jpg','jpeg','JPG', 'gif', 'png', 'swf'))) {
 							$newfilename = site_fold.$item[$indx]->folder.'/'.$inc_indx.'.'.$f_exp;
-							if (copy($_FILES[$column]["tmp_name"], $newfilename)) {
+							if (copy($_FILES[$column]["tmp_name"], $newfilename))
 								$file_update = mysql_query('UPDATE '.$maintable.' SET '.$column.' = '."'".$f_exp."'".' WHERE '.$increment.' = '.$inc_indx);
-								chmod($newfilename, 0666); 
-							}
 							else
 								echo "<SCRIPT>alert('Файл '".$newfilename."'не сохранен!')</SCRIPT>";
 						}
