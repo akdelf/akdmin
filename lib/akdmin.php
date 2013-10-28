@@ -8,7 +8,7 @@ class AKdmin {
 private $admin = ''; 
 private $fields = array();
 private $where = array();
-private $order = array(); // 
+private $order = array();  
 private $limit = 20;
 private $page = 1;
 
@@ -130,8 +130,9 @@ function start(){
 		$auth = new auth();
 		$auth->action();
 		
-		$user_row = kORM::table('users')->filter('login', $_SERVER['PHP_AUTH_USER'])->one();
+		$user_row = table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
 
+		
 		/*$user = mysql_query("SELECT * FROM `users` Where `login`='".$_SERVER['PHP_AUTH_USER']."'");
 		$user_row = mysql_fetch_array($user);*/
 	
@@ -145,7 +146,7 @@ function start(){
 		$nameuser = $user_row['name'];
 		$region_id = $user_row['region_id'];
 	
-		$grrow = kORM::table('groupuser')->filter('group_id', $group_id)->one();
+		$grrow = kORM::table('groupuser')->where('group_id', $group_id)->one();
 
 
 		if ($user_row != null) {
@@ -1189,6 +1190,21 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
    case "edit":
    case "add":
 
+   	if ($action == 'edit') {
+		
+		$lock_file = site_fold.'lock/'.$nametable.'_'.$increment_value;
+		
+		if (file_exists($lock_file)){
+			$user = file_get_contents($lock_file);
+			echo '<p style="color: red;">Запись редактируется '.$user.'</p>';
+		}
+		else{
+			file_put_contents($lock_file, '12');
+		}
+
+	}	
+
+
 	$act_str = ($action == 'edit') ? 'Изменение': 'Добавление';?>
 	<div id = "caption"><?=$caption?>. <?=$act_str?><span id="closed"><a href="javascript:StartLink('<?=$admin?>','cancel', '', '', '');">закрыть X</a></span></div>
 
@@ -1389,6 +1405,9 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					}
 
 					$pr_form .=  '<p><INPUT TYPE = "hidden" NAME = "'.$column.'"  value = "'.$user_value.'" ></p>';
+
+
+
 				break;
 
 				case 'spin':
@@ -1817,6 +1836,17 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 			}
 		}
+
+		
+		if ($action == 'update') {
+		
+			$lock_file = site_fold.'lock/'.$maintable.'_'.$increment_value;
+			if (file_exists($lock_file))
+				unlink($lock_file);
+
+		}
+
+
 
 		$increm = ($action == 'insert') ? $inc_indx : $increment_value;
 
