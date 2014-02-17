@@ -8,9 +8,10 @@ class AKdmin {
 private $admin = ''; 
 private $fields = array();
 private $where = array();
-private $order = array();  
+private $order = array(); // 
 private $limit = 20;
 private $page = 1;
+public $link = null;
 
 
 
@@ -25,6 +26,11 @@ function xss($value) {
   
     return $value;	
 
+}
+
+
+function link($link) {
+	$this->link = $link;
 }
 
 
@@ -130,9 +136,10 @@ function start(){
 		$auth = new auth();
 		$auth->action();
 		
-		$user_row = table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
 
-		
+
+		$user_row = kORM::table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
+
 		/*$user = mysql_query("SELECT * FROM `users` Where `login`='".$_SERVER['PHP_AUTH_USER']."'");
 		$user_row = mysql_fetch_array($user);*/
 	
@@ -162,7 +169,7 @@ function start(){
 	else
 		$group_id = 1;
 
-
+	
 	$menufile = file_get_contents(APPPATH.'menu/'.$group_id.'.json');
 	$menus = json_decode($menufile, true);
 
@@ -442,8 +449,37 @@ function quote($txt)
 
 
 
+function subfilter($value, $config, $id) {
+
+	
+	$inc = $config->increment;
+	$column = $config->column;
+
+	$rows = kORM::table($config->table)->columns(array($inc, $column))->where($config->wh_column, $value)->result_array();
+
+	if (!isset($rows))
+		return '';
+
+	$result = '<SELECT ID="'.$id.'"><OPTION class="gray" VALUE="0">по умолчанию</OPTION>';
+
+	foreach($rows as $row) {
+		$result .= '<OPTION VALUE="'.$row[$inc].'">'.$row[$column].'</OPTION>';
+	}
+
+	$result .= '</SELECT>';
+
+
+	return $result;
+
+
+}
+
+
+
+ 
+
  //построение списка подзаписей
- function subfilter($value, $config, $id)
+ function sf($value, $config, $id)
  {
 
 
@@ -669,34 +705,46 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$nullfilter = True;
 				}
 				if ($action == 'selectall'){ //рисуем фильтры
+					
 					$filters_count ++;
+					
 					if ($filters_count == 1)
 						 echo '<p id = "titles">Фильтрация</p><div id = "filter">
 						 <table>';
-					$selectrow = 'SELECT '.$item[$it]->lookup->id.', '.$item[$it]->lookup->column.' FROM '.$item[$it]->lookup->table;
+					
+					$look_id = $item[$it]->lookup->id;
+					$look_col = $item[$it]->lookup->column;
+					$ftable = kORM::table($item[$it]->lookup->table)->columns(array($look_id, $look_col));
+					
 					if ($item[$it]->lookup->where != '')
-						$selectrow .= ' WHERE '.$item[$it]->lookup->where;
+						$ftable->wh_str($item[$it]->lookup->where);
 					if ($item[$it]->lookup->order != '')
-						$selectrow .= ' ORDER BY '.$item[$it] ->lookup->order;
-					$selectres = mysql_query($selectrow);
-					if (@mysql_num_rows($selectres) != 0) {
+						$ftable->ord_str($item[$it]->lookup->order);
+
+					$fitems = $ftable->all();
+
+					if (isset($fitems)) {
+						
 						$ttitle .= '<td><b style = "color:#696969;">'.$item[$it]->title.'</b></td>';
 						$id_select = $item[$it]->column;
 						$tselect .= '<td><SELECT ID="'.$id_select.'" NAME = "'.$id_select.'"  onChange="'.js_func('select_filter', array('select_id'=>$id_select, 'admin'=>$admin, 'param_name'=>$id_select)).'">';
 						$nullvalue = (isset($item[$it]->lookup->nulltxt)) ? (string)$item[$it]->lookup->nulltxt : 'нулевые значения';
 						$tselect .=  GreateMainFilter($admin, $columnname, $colfilter, $nullvalue); //рисуем (все, null, 0)
-						while ($selectrow = mysql_fetch_row($selectres)) {
-							if ($colfilter == $selectrow[0])
+
+						foreach($fitems as $key=>$fitem){
+							if ($colfilter == $fitem[$look_col])
 								$selected = ' selected="selected"';
 							else
 								$selected = '';
-							$tselect .=  '<option value = "'.$selectrow[0].'"'.$selected.'>'.$selectrow[1].'</option>';
-					    }
-						$tselect .=  '</SELECT></td>';
-					}
-				}
-			}
+							$tselect .=  '<option value = "'.$fitem[$look_id].'"'.$selected.'>'.$fitem[$look_col].'</option>';
+						}
 
+						$tselect .=  '</SELECT></td>';
+					}	
+				}
+
+			}
+		
 			if ($item[$it]->view->table == 'True'){ // если для таблицы активна
 			    $maxi ++;
 				if ($columnname == $increment) {
@@ -902,7 +950,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 								$input_value = '';
 								$checked_value = '1';
 							}
-					        echo ('<INPUT TYPE = "checkbox" id = "'.$component[$a]['column'].$increment_value.'"'.$input_value.' onClick = "'."StartLinkActiveDate('".$admin."' , '".$increment_value."', '".$component[$a]['column']."', '".$component[$a]['fieldate']."');".'"/>');
+					        echo ('<INPUT disabled TYPE = "checkbox" id = "'.$component[$a]['column'].$increment_value.'"'.$input_value.' onClick = "'."StartLinkActiveDate('".$admin."' , '".$increment_value."', '".$component[$a]['column']."', '".$component[$a]['fieldate']."');".'"/>');
 					        echo('</td>');
 							break;
 
@@ -950,9 +998,9 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 							echo('<TD '.$texttitle.$selectrow[$a].'">');
 				            if (isset($component[$a]['link'])){
-								$link = str_replace('{%}', $selectrow[$a], $component[$a]['link']);
+								$ulink = str_replace('{%}', $selectrow[$a], $component[$a]['link']);
 								//$link = str_replace('{%inc%}', $increment, $component[$a]['link']);
-								echo '<a target="_blank" href ="'.$link.'">'.$val_txt.'</a>';
+								echo '<a target="_blank" href ="'.$ulink.'">'.$val_txt.'</a>';
 							}
 							else
 								echo  $val_txt;
@@ -975,7 +1023,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 				if (isset($ex_table)):
 					$export_id=$increment_value.'_ex';?>
-					<span id="<?=$export_id?>"><a onclick="sendRequest('<?=site_ad?>admins.php?admin=<?=$admin?>&action=export&increment=<?=$increment_value?>', '<?=$export_id?>', getRequest);" title="Экспорт" href="#"><img alt="редактирование записи" src="<?=PUB?>img/export.png" id="rbutton"/></a></span>
+					<span id="<?=$export_id?>"><a onclick="sendRequest('<?=AD?>admins.php?admin=<?=$admin?>&action=export&increment=<?=$increment_value?>', '<?=$export_id?>', getRequest);" title="Экспорт" href="#"><img alt="редактирование записи" src="<?=PUB?>img/export.png" id="rbutton"/></a></span>
 				<?endif;
 
 				//if ($_SESSION['readonly'] == 0)
@@ -1190,21 +1238,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
    case "edit":
    case "add":
 
-   	if ($action == 'edit') {
-		
-		$lock_file = site_fold.'lock/'.$nametable.'_'.$increment_value;
-		
-		if (file_exists($lock_file)){
-			$user = file_get_contents($lock_file);
-			echo '<p style="color: red;">Запись редактируется '.$user.'</p>';
-		}
-		else{
-			file_put_contents($lock_file, '12');
-		}
-
-	}	
-
-
 	$act_str = ($action == 'edit') ? 'Изменение': 'Добавление';?>
 	<div id = "caption"><?=$caption?>. <?=$act_str?><span id="closed"><a href="javascript:StartLink('<?=$admin?>','cancel', '', '', '');">закрыть X</a></span></div>
 
@@ -1230,7 +1263,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 	else
 		$f_acton = '&action=insert';
 
-	$pr_form = '<FORM NAME = "fMain" id="fMain" target = "tform" ACTION ="'.site_ad.'admins.php?admin='.$admin.$f_acton.'" METHOD = "post" enctype = "multipart/form-data" onSubmit="SubmitForm(this.id);">';
+	$pr_form = '<FORM NAME = "fMain" id="fMain" target = "tform" ACTION ="'.AD.'admins.php?admin='.$admin.$f_acton.'" METHOD = "post" enctype = "multipart/form-data" onSubmit="SubmitForm(this.id);">';
 	$active_err = (isset($_SESSION['ferror']) && $_SESSION['ferror'] == 1) ? 1 :0; // узнаем ошибки ли это были или нет
 	$active_err = 0;
 	$_SESSION['ferror'] = 0; // сбрасываем на случай отмены
@@ -1360,7 +1393,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$wwwname = site.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
 						if (in_array($column_value, array('jpg', 'jpeg', 'png', 'gif', 'JPEG')))
 							$pr_form .= ' <p><IMG src="'.$wwwname.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
-						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".site_ad."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
+						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".AD."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
 					}
 					else 
 						$pr_form .= '<p>';
@@ -1405,9 +1438,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					}
 
 					$pr_form .=  '<p><INPUT TYPE = "hidden" NAME = "'.$column.'"  value = "'.$user_value.'" ></p>';
-
-
-
 				break;
 
 				case 'spin':
@@ -1605,6 +1635,32 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			switch ($type) {
 				case 'checkbox':
 				case 'checkdate':
+					
+					$activation = True;
+
+					if (isset($item[$i]->count) and $item[$i]->count !== ''){
+						$ccolumn =(string)$item[$i]->count;
+						if (isset($_POST[$ccolumn])) {
+							$txtonly = $_POST[$ccolumn];
+							$txtonly = html_entity_decode($txtonly);
+							$txtonly = str_replace("&nbsp;", '', $txtonly);
+							//$txtonly = str_replace(" ", '', $txtonly);
+							$txtonly = preg_replace('/&([a-zA-Z0-9]{2,6}|#[0-9]{2,4});/', '', $txtonly);
+							$txtonly = str_replace('|+|amp|+|', '&', $txtonly);	
+							$txtonly = strip_tags($txtonly);
+							$txtonly = trim($txtonly);
+							$len = mb_strlen($txtonly, 'UTF-8');
+							if ($len > 1200) {
+								$values = null;
+								break;
+							}	
+						}						
+						
+					}
+
+
+					
+
 					if (isset($_POST[$posts])){
 						$values = '1';
 						$checkdated = True;
@@ -1613,8 +1669,11 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$values = '0';
 						$checkdated = False;
 					}
+					
 					$activation = True;
-					break;
+										
+				break;
+
 				case 'file':
 					$file_increment[$fa] = $i;
 					$activation = False;
@@ -1684,7 +1743,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 			$exxmlwhere = '';
 			//экслюзивность значения, в остальных полях идет сброс его
-			if (isset($item[$i]->exclusive) and $values !== null and $item[$i]->exclusive->value !== $values) {
+			if (isset($item[$i]->exclusive) and $item[$i]->exclusive->value !== $values) {
 				$exclusives[$posts] = array('value'=>$values, 'reset'=>$item[$i]->exclusive->value);
 				if (isset($item[$i]->exclusive->where))
 					$exxmlwhere = trim($item[$i]->exclusive->where);
@@ -1724,7 +1783,10 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 							//		$admin_res = 'selectall';
 							//	}
 							//	}
-							$sql_update .= SqlAddSpec($sql_update, 0).$posts.' = '.$values;
+							
+							if ($values !== null)
+								$sql_update .= SqlAddSpec($sql_update, 0).$posts.' = '.$values;
+							
 							if ($type == 'checkdate' and $checkdated) { #публикация
 
 								$actupdate = separ($item[$i]->fieldate).' = '.quote(date('Y-m-d G:i:s'));
@@ -1773,8 +1835,10 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 		$sqlres = mysql_query($sqltext) or write_log('Ошибка MySQL: '.mysql_error().' sql:'.$sqltext);
 		if ($sqlres) { //если запрос прошел успешно
-			if ($action == 'insert')  // значение инкремента
-				$inc_indx = mysql_insert_id($link);
+			if ($action == 'insert') {  // значение инкремента
+				$inc_indx = mysql_insert_id($this->link);
+				//echo 'созданный id = '.mysql_insert_id($this->link);
+			}	
 			else
 				$inc_indx = $increment_value;
 
@@ -1836,17 +1900,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 			}
 		}
-
-		
-		if ($action == 'update') {
-		
-			$lock_file = site_fold.'lock/'.$maintable.'_'.$increment_value;
-			if (file_exists($lock_file))
-				unlink($lock_file);
-
-		}
-
-
 
 		$increm = ($action == 'insert') ? $inc_indx : $increment_value;
 
