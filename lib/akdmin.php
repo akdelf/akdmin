@@ -675,6 +675,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 	case 'selecttable':
 
 
+		
+
 		//первоначальные значения
 	    $filters_count = 0;
 		$increment_num = -1;
@@ -689,6 +691,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		$c_type = array();
 		$chet = False;
 
+		$mytable =  kORM::table($nametable); //главная текущая таблица
+
 		if ($action == 'selectall'){ ?>
 			<div id="caption"><?=$caption?>  Редактирование</div>
 		<?}
@@ -700,7 +704,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$filters[$filters_count]['column'] = $item[$it]->title;
 				if (isset($_GET[$columnname])){
 					$colfilter = strip_tags($_GET[$columnname]);
-					$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
+					$mytable->where($maintable.'.'.$item[$it]->column, $colfilter);
+					//$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
 					if ($colfilter == 'null' || $colfilter == 0)
 						$nullfilter = True;
 				}
@@ -712,8 +717,9 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						 echo '<p id = "titles">Фильтрация</p><div id = "filter">
 						 <table>';
 					
-					$look_id = $item[$it]->lookup->id;
-					$look_col = $item[$it]->lookup->column;
+					$look_id = (string)$item[$it]->lookup->id;
+					$look_col = (string)$item[$it]->lookup->column;
+
 					$ftable = kORM::table($item[$it]->lookup->table)->columns(array($look_id, $look_col));
 					
 					if ($item[$it]->lookup->where != '')
@@ -731,7 +737,10 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$nullvalue = (isset($item[$it]->lookup->nulltxt)) ? (string)$item[$it]->lookup->nulltxt : 'нулевые значения';
 						$tselect .=  GreateMainFilter($admin, $columnname, $colfilter, $nullvalue); //рисуем (все, null, 0)
 
-						foreach($fitems as $key=>$fitem){
+
+
+						foreach($fitems as $fitem){
+
 							if ($colfilter == $fitem[$look_col])
 								$selected = ' selected="selected"';
 							else
@@ -766,11 +775,13 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				if ($columnname == $order) {
 					$order_value = ' ORDER BY '.$maintable.'.'.$columnname;
 					if ($order_type == 1){
+						$mytable->order($columnname);
 						$ord_title_type = '+';
 						$order_value .= ' ASC';
 						$img = '<IMG class="img_sort" src="'.PUB.'img/s_asc.png" alt="по возрастанию"/>';
 					}
 					else {
+						$mytable->order($columnname, 'DESC');
 						$ord_title_type = '-';
 						$order_value .= ' DESC';
 						$img = '<IMG class="img_sort"  src="'.PUB.'img/s_desc.png" alt="по убыванию"/>';
@@ -789,14 +800,18 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				<a href="#" onClick = "StartLink('.chr(39).$admin.chr(39).", 'selectall', 'content', 'order', '".$columnname.$ord_title_type."'".');">'.$item[$it]->title.$img.'</a>
 				</td>';
 				if ($item[$it]->type == 'lookup' && !$nullfilter){ //формируем запрос
+					$mytable->add($item[$it]->lookup->table.'.'.$item[$it]->lookup->column);
 					$sql .= SqlAddSpec($sql, 0).$columnname.'.'.$item[$it]->lookup->column;
 				//	$tables .=', '.$item[$it]->lookup->table;
+					$mytable->join($item[$it]->lookup->table, $columnname, $item[$it]->lookup->id);
 					$join .= ' LEFT JOIN '.separ($item[$it]->lookup->table).' '.separ($columnname).' ON ('.separ($columnname).'.'.separ($item[$it]->lookup->id).'='.$maintable.'.'.separ($item[$it]->column).')';
 
 					/*$where_lookup .= SqlAddSpec($where_lookup, 1).$item[$it]->lookup->table.'.'.$item[$it]->lookup->id.'='.$maintable.'.'.$item[$it]->column;*/
 				}
-				else
+				else {
+					$mytable->add($nametable.'.'.$item[$it]->column);
 					$sql .= SqlAddSpec($sql, 0).$maintable.'.'.$item[$it]->column;
+				}
 
 			}
 		}
@@ -845,8 +860,10 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			If ($where !=='')$sqlres .= ' WHERE '.$where;
 		}
 		else {
-			if ($order_value == '' && $order_main != '') //если не один не сыграл - фильтр по умолчанию
+			if ($order_value == '' && $order_main != '') {//если не один не сыграл - фильтр по умолчанию
+				$mytable->order($order_main, $order_main_type);
 				$order_value = ' ORDER BY '.$order_main.$order_main_type;
+			}	
 			if ($where_main !== '')
 				$where .= SqlAddSpec($where, 1).$where_main;
 			$where_filter = trim($where_filter);
@@ -891,7 +908,11 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 			<?php }
 
+			
+			
 			$sqlres = 'SELECT '.$sql.' FROM '.$maintable;
+
+
 			if ($tables != '') $sqlres .= $tables;
 			if ($join != '') $sqlres .= $join;
 	
@@ -904,13 +925,17 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$sqlres .= $where;
 			if ($order_value !== '')
 				$sqlres .= $order_value;
-			$sqlres .= $limit;
-			
-			
+			$sqlres .= $limit;						
 
 		}
 
-		//echo $sqlres;
+		echo $sqlres;
+		echo '<br><br>';
+		$mytable->limit(20);
+		print_r($mytable->all());
+		echo $mytable;
+		//print_r($mytable->all());
+
 		$selectres = mysql_query($sqlres) or write_log('Ошибка MySQL: '.mysql_error().':'.$sqlres); //подсчет;
 		if (@mysql_num_rows($selectres) != 0) {
 			if ($action != 'selectrow')
@@ -925,6 +950,9 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					echo('<TR id = "'.$increment_value.'" class="'.$tr_class.'" onmouseover = "Rmarker(this.id, '."'market'".');" onmouseout = "Rmarker(this.id, '."'".$tr_class."'".');">');
 				}
 				for ($a = 0; $a <= $maxi; $a++) {
+					
+					$id = $component[$a]['column'].$increment_value;
+
 					switch ($component[$a]['type']) {
 						case 'checkbox' :
 							echo('<TD>');
@@ -971,12 +999,16 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 							echo '<TD>';
 							if (in_array($selectrow[$a], array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
 								$wwwname = site.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
+								$imgfile = psite.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
 								$fwidth = 100;
 								if ($component[$a]['width'])
 									$fwidth = $component[$a]['width'];
 								else
 									$fwidth = 100;
-								echo'<a href="'.$wwwname.'" target="_blank"><img src ="'.$wwwname.'" width="'.$fwidth.'"></a>';
+								
+								echo '<a href="'.$wwwname.'" target="_blank"><img src ="'.thumbcache($imgfile, $fwidth, 100).'" width="'.$fwidth.'"></a>';
+
+								//echo'<a href="'.$wwwname.'" target="_blank"><img src ="'.$wwwname.'" width="'.$fwidth.'"></a>';
 							}	
 							echo '</TD>';
 						break;
