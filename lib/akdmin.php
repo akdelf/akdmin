@@ -136,9 +136,7 @@ function start(){
 		$auth = new auth();
 		$auth->action();
 		
-
-
-		$user_row = kORM::table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
+		$user_row = kORM::table('users')->filter('login', $_SERVER['PHP_AUTH_USER'])->one();
 
 		/*$user = mysql_query("SELECT * FROM `users` Where `login`='".$_SERVER['PHP_AUTH_USER']."'");
 		$user_row = mysql_fetch_array($user);*/
@@ -153,7 +151,7 @@ function start(){
 		$nameuser = $user_row['name'];
 		$region_id = $user_row['region_id'];
 	
-		$grrow = kORM::table('groupuser')->where('group_id', $group_id)->one();
+		$grrow = kORM::table('groupuser')->filter('group_id', $group_id)->one();
 
 
 		if ($user_row != null) {
@@ -169,7 +167,7 @@ function start(){
 	else
 		$group_id = 1;
 
-	
+
 	$menufile = file_get_contents(APPPATH.'menu/'.$group_id.'.json');
 	$menus = json_decode($menufile, true);
 
@@ -449,37 +447,8 @@ function quote($txt)
 
 
 
-function subfilter($value, $config, $id) {
-
-	
-	$inc = $config->increment;
-	$column = $config->column;
-
-	$rows = kORM::table($config->table)->columns(array($inc, $column))->where($config->wh_column, $value)->result_array();
-
-	if (!isset($rows))
-		return '';
-
-	$result = '<SELECT ID="'.$id.'"><OPTION class="gray" VALUE="0">по умолчанию</OPTION>';
-
-	foreach($rows as $row) {
-		$result .= '<OPTION VALUE="'.$row[$inc].'">'.$row[$column].'</OPTION>';
-	}
-
-	$result .= '</SELECT>';
-
-
-	return $result;
-
-
-}
-
-
-
- 
-
  //построение списка подзаписей
- function sf($value, $config, $id)
+ function subfilter($value, $config, $id)
  {
 
 
@@ -675,8 +644,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 	case 'selecttable':
 
 
-		
-
 		//первоначальные значения
 	    $filters_count = 0;
 		$increment_num = -1;
@@ -691,8 +658,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		$c_type = array();
 		$chet = False;
 
-		$mytable =  kORM::table($nametable); //главная текущая таблица
-
 		if ($action == 'selectall'){ ?>
 			<div id="caption"><?=$caption?>  Редактирование</div>
 		<?}
@@ -704,56 +669,39 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$filters[$filters_count]['column'] = $item[$it]->title;
 				if (isset($_GET[$columnname])){
 					$colfilter = strip_tags($_GET[$columnname]);
-					$mytable->where($maintable.'.'.$item[$it]->column, $colfilter);
-					//$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
+					$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
 					if ($colfilter == 'null' || $colfilter == 0)
 						$nullfilter = True;
 				}
 				if ($action == 'selectall'){ //рисуем фильтры
-					
 					$filters_count ++;
-					
 					if ($filters_count == 1)
 						 echo '<p id = "titles">Фильтрация</p><div id = "filter">
 						 <table>';
-					
-					$look_id = (string)$item[$it]->lookup->id;
-					$look_col = (string)$item[$it]->lookup->column;
-
-					$ftable = kORM::table($item[$it]->lookup->table)->columns(array($look_id, $look_col));
-					
+					$selectrow = 'SELECT '.$item[$it]->lookup->id.', '.$item[$it]->lookup->column.' FROM '.$item[$it]->lookup->table;
 					if ($item[$it]->lookup->where != '')
-						$ftable->wh_str($item[$it]->lookup->where);
+						$selectrow .= ' WHERE '.$item[$it]->lookup->where;
 					if ($item[$it]->lookup->order != '')
-						$ftable->ord_str($item[$it]->lookup->order);
-
-					$fitems = $ftable->all();
-
-					if (isset($fitems)) {
-						
+						$selectrow .= ' ORDER BY '.$item[$it] ->lookup->order;
+					$selectres = mysql_query($selectrow);
+					if (@mysql_num_rows($selectres) != 0) {
 						$ttitle .= '<td><b style = "color:#696969;">'.$item[$it]->title.'</b></td>';
 						$id_select = $item[$it]->column;
 						$tselect .= '<td><SELECT ID="'.$id_select.'" NAME = "'.$id_select.'"  onChange="'.js_func('select_filter', array('select_id'=>$id_select, 'admin'=>$admin, 'param_name'=>$id_select)).'">';
 						$nullvalue = (isset($item[$it]->lookup->nulltxt)) ? (string)$item[$it]->lookup->nulltxt : 'нулевые значения';
 						$tselect .=  GreateMainFilter($admin, $columnname, $colfilter, $nullvalue); //рисуем (все, null, 0)
-
-
-
-						foreach($fitems as $fitem){
-
-							if ($colfilter == $fitem[$look_col])
+						while ($selectrow = mysql_fetch_row($selectres)) {
+							if ($colfilter == $selectrow[0])
 								$selected = ' selected="selected"';
 							else
 								$selected = '';
-							$tselect .=  '<option value = "'.$fitem[$look_id].'"'.$selected.'>'.$fitem[$look_col].'</option>';
-						}
-
+							$tselect .=  '<option value = "'.$selectrow[0].'"'.$selected.'>'.$selectrow[1].'</option>';
+					    }
 						$tselect .=  '</SELECT></td>';
-					}	
+					}
 				}
-
 			}
-		
+
 			if ($item[$it]->view->table == 'True'){ // если для таблицы активна
 			    $maxi ++;
 				if ($columnname == $increment) {
@@ -775,13 +723,11 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				if ($columnname == $order) {
 					$order_value = ' ORDER BY '.$maintable.'.'.$columnname;
 					if ($order_type == 1){
-						$mytable->order($columnname);
 						$ord_title_type = '+';
 						$order_value .= ' ASC';
 						$img = '<IMG class="img_sort" src="'.PUB.'img/s_asc.png" alt="по возрастанию"/>';
 					}
 					else {
-						$mytable->order($columnname, 'DESC');
 						$ord_title_type = '-';
 						$order_value .= ' DESC';
 						$img = '<IMG class="img_sort"  src="'.PUB.'img/s_desc.png" alt="по убыванию"/>';
@@ -800,18 +746,14 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				<a href="#" onClick = "StartLink('.chr(39).$admin.chr(39).", 'selectall', 'content', 'order', '".$columnname.$ord_title_type."'".');">'.$item[$it]->title.$img.'</a>
 				</td>';
 				if ($item[$it]->type == 'lookup' && !$nullfilter){ //формируем запрос
-					$mytable->add($item[$it]->lookup->table.'.'.$item[$it]->lookup->column);
 					$sql .= SqlAddSpec($sql, 0).$columnname.'.'.$item[$it]->lookup->column;
 				//	$tables .=', '.$item[$it]->lookup->table;
-					$mytable->join($item[$it]->lookup->table, $columnname, $item[$it]->lookup->id);
 					$join .= ' LEFT JOIN '.separ($item[$it]->lookup->table).' '.separ($columnname).' ON ('.separ($columnname).'.'.separ($item[$it]->lookup->id).'='.$maintable.'.'.separ($item[$it]->column).')';
 
 					/*$where_lookup .= SqlAddSpec($where_lookup, 1).$item[$it]->lookup->table.'.'.$item[$it]->lookup->id.'='.$maintable.'.'.$item[$it]->column;*/
 				}
-				else {
-					$mytable->add($nametable.'.'.$item[$it]->column);
+				else
 					$sql .= SqlAddSpec($sql, 0).$maintable.'.'.$item[$it]->column;
-				}
 
 			}
 		}
@@ -860,10 +802,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			If ($where !=='')$sqlres .= ' WHERE '.$where;
 		}
 		else {
-			if ($order_value == '' && $order_main != '') {//если не один не сыграл - фильтр по умолчанию
-				$mytable->order($order_main, $order_main_type);
+			if ($order_value == '' && $order_main != '') //если не один не сыграл - фильтр по умолчанию
 				$order_value = ' ORDER BY '.$order_main.$order_main_type;
-			}	
 			if ($where_main !== '')
 				$where .= SqlAddSpec($where, 1).$where_main;
 			$where_filter = trim($where_filter);
@@ -908,11 +848,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 			<?php }
 
-			
-			
 			$sqlres = 'SELECT '.$sql.' FROM '.$maintable;
-
-
 			if ($tables != '') $sqlres .= $tables;
 			if ($join != '') $sqlres .= $join;
 	
@@ -925,17 +861,13 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$sqlres .= $where;
 			if ($order_value !== '')
 				$sqlres .= $order_value;
-			$sqlres .= $limit;						
+			$sqlres .= $limit;
+			
+			
 
 		}
 
-		echo $sqlres;
-		echo '<br><br>';
-		$mytable->limit(20);
-		print_r($mytable->all());
-		echo $mytable;
-		//print_r($mytable->all());
-
+		//echo $sqlres;
 		$selectres = mysql_query($sqlres) or write_log('Ошибка MySQL: '.mysql_error().':'.$sqlres); //подсчет;
 		if (@mysql_num_rows($selectres) != 0) {
 			if ($action != 'selectrow')
@@ -950,9 +882,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					echo('<TR id = "'.$increment_value.'" class="'.$tr_class.'" onmouseover = "Rmarker(this.id, '."'market'".');" onmouseout = "Rmarker(this.id, '."'".$tr_class."'".');">');
 				}
 				for ($a = 0; $a <= $maxi; $a++) {
-					
-					$id = $component[$a]['column'].$increment_value;
-
 					switch ($component[$a]['type']) {
 						case 'checkbox' :
 							echo('<TD>');
@@ -999,16 +928,12 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 							echo '<TD>';
 							if (in_array($selectrow[$a], array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
 								$wwwname = site.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
-								$imgfile = psite.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
 								$fwidth = 100;
 								if ($component[$a]['width'])
 									$fwidth = $component[$a]['width'];
 								else
 									$fwidth = 100;
-								
-								echo '<a href="'.$wwwname.'" target="_blank"><img src ="'.thumbcache($imgfile, $fwidth, 100).'" width="'.$fwidth.'"></a>';
-
-								//echo'<a href="'.$wwwname.'" target="_blank"><img src ="'.$wwwname.'" width="'.$fwidth.'"></a>';
+								echo'<a href="'.$wwwname.'" target="_blank"><img src ="'.$wwwname.'" width="'.$fwidth.'"></a>';
 							}	
 							echo '</TD>';
 						break;
@@ -1055,7 +980,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 				if (isset($ex_table)):
 					$export_id=$increment_value.'_ex';?>
-					<span id="<?=$export_id?>"><a onclick="sendRequest('<?=AD?>admins.php?admin=<?=$admin?>&action=export&increment=<?=$increment_value?>', '<?=$export_id?>', getRequest);" title="Экспорт" href="#"><img alt="редактирование записи" src="<?=PUB?>img/export.png" id="rbutton"/></a></span>
+					<span id="<?=$export_id?>"><a onclick="sendRequest('<?=site_ad?>admins.php?admin=<?=$admin?>&action=export&increment=<?=$increment_value?>', '<?=$export_id?>', getRequest);" title="Экспорт" href="#"><img alt="редактирование записи" src="<?=PUB?>img/export.png" id="rbutton"/></a></span>
 				<?endif;
 
 				//if ($_SESSION['readonly'] == 0)
@@ -1295,7 +1220,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 	else
 		$f_acton = '&action=insert';
 
-	$pr_form = '<FORM NAME = "fMain" id="fMain" target = "tform" ACTION ="'.AD.'admins.php?admin='.$admin.$f_acton.'" METHOD = "post" enctype = "multipart/form-data" onSubmit="SubmitForm(this.id);">';
+	$pr_form = '<FORM NAME = "fMain" id="fMain" target = "tform" ACTION ="'.site_ad.'admins.php?admin='.$admin.$f_acton.'" METHOD = "post" enctype = "multipart/form-data" onSubmit="SubmitForm(this.id);">';
 	$active_err = (isset($_SESSION['ferror']) && $_SESSION['ferror'] == 1) ? 1 :0; // узнаем ошибки ли это были или нет
 	$active_err = 0;
 	$_SESSION['ferror'] = 0; // сбрасываем на случай отмены
@@ -1425,7 +1350,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						$wwwname = site.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
 						if (in_array($column_value, array('jpg', 'jpeg', 'png', 'gif', 'JPEG')))
 							$pr_form .= ' <p><IMG src="'.$wwwname.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
-						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".AD."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
+						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".site_ad."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
 					}
 					else 
 						$pr_form .= '<p>';
@@ -1936,10 +1861,12 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		$increm = ($action == 'insert') ? $inc_indx : $increment_value;
 
 		define('INC_VALUE', $increm);
+		$history_save = True;
 
 		if ($history_save) {
 			$currdate = date('Y-m-d H:i:s'); //текущая дата
-			$histoty_file = APPPATH.'history/'.$nametable.'/'.date_to_url($currdate, False).'/'.$nametable.'_'.$increm.'_'.date_to_url($currdate, True,'_').'.sql'; //файл истории запроса sql
+			$histoty_file = site_fold_ad.'history/'.$nametable.'/'.date_to_url($currdate, False).'/'.$nametable.'_'.$increm.'_'.date_to_url($currdate, True,'_').'.sql'; //файл истории запроса sql
+			echo $histoty_file;
 			save($histoty_file, $sqltext); //сохраняем историю
 		}
 
