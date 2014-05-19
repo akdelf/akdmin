@@ -1548,10 +1548,12 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
   case "update":
 
 
-
+  	//защита от пустого $POST
+  	if (sizeof($_POST) == 0)
+  		exit;
+  	  	
 	require_once("validate.php");
 	require_once("tipograf.php");
-
 
 	$errors = 0;
 	$errresult = false;
