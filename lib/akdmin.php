@@ -136,7 +136,7 @@ function start(){
 		$auth = new auth();
 		$auth->action();
 		
-		$user_row = kORM::table('users')->filter('login', $_SERVER['PHP_AUTH_USER'])->one();
+		$user_row = kORM::table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
 
 		/*$user = mysql_query("SELECT * FROM `users` Where `login`='".$_SERVER['PHP_AUTH_USER']."'");
 		$user_row = mysql_fetch_array($user);*/
@@ -151,7 +151,7 @@ function start(){
 		$nameuser = $user_row['name'];
 		$region_id = $user_row['region_id'];
 	
-		$grrow = kORM::table('groupuser')->filter('group_id', $group_id)->one();
+		$grrow = kORM::table('groupuser')->where('group_id', $group_id)->one();
 
 
 		if ($user_row != null) {
@@ -658,6 +658,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		$c_type = array();
 		$chet = False;
 
+		$this->mytable =  kORM::table($nametable); //главная текущая таблица
+
 		if ($action == 'selectall'){ ?>
 			<div id="caption"><?=$caption?>  Редактирование</div>
 		<?}
@@ -669,38 +671,56 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$filters[$filters_count]['column'] = $item[$it]->title;
 				if (isset($_GET[$columnname])){
 					$colfilter = strip_tags($_GET[$columnname]);
-					$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
+					$this->mytable->where($maintable.'.'.$item[$it]->column, $colfilter);
+					//$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
 					if ($colfilter == 'null' || $colfilter == 0)
 						$nullfilter = True;
 				}
 				if ($action == 'selectall'){ //рисуем фильтры
+					
 					$filters_count ++;
+					
 					if ($filters_count == 1)
 						 echo '<p id = "titles">Фильтрация</p><div id = "filter">
 						 <table>';
-					$selectrow = 'SELECT '.$item[$it]->lookup->id.', '.$item[$it]->lookup->column.' FROM '.$item[$it]->lookup->table;
+					
+					$look_id = (string)$item[$it]->lookup->id;
+					$look_col = (string)$item[$it]->lookup->column;
+
+					$ftable = kORM::table($item[$it]->lookup->table)->columns(array($look_id, $look_col));
+					
 					if ($item[$it]->lookup->where != '')
-						$selectrow .= ' WHERE '.$item[$it]->lookup->where;
+						$ftable->wh_str($item[$it]->lookup->where);
 					if ($item[$it]->lookup->order != '')
-						$selectrow .= ' ORDER BY '.$item[$it] ->lookup->order;
-					$selectres = mysql_query($selectrow);
-					if (@mysql_num_rows($selectres) != 0) {
+						$ftable->ord_str($item[$it]->lookup->order);
+
+					$fitems = $ftable->all();
+
+					if (isset($fitems)) {
+						
 						$ttitle .= '<td><b style = "color:#696969;">'.$item[$it]->title.'</b></td>';
 						$id_select = $item[$it]->column;
 						$tselect .= '<td><SELECT ID="'.$id_select.'" NAME = "'.$id_select.'"  onChange="'.js_func('select_filter', array('select_id'=>$id_select, 'admin'=>$admin, 'param_name'=>$id_select)).'">';
 						$nullvalue = (isset($item[$it]->lookup->nulltxt)) ? (string)$item[$it]->lookup->nulltxt : 'нулевые значения';
 						$tselect .=  GreateMainFilter($admin, $columnname, $colfilter, $nullvalue); //рисуем (все, null, 0)
-						while ($selectrow = mysql_fetch_row($selectres)) {
-							if ($colfilter == $selectrow[0])
+
+
+
+						foreach($fitems as $fitem){
+
+							if ($colfilter == $fitem[$look_col])
 								$selected = ' selected="selected"';
 							else
 								$selected = '';
-							$tselect .=  '<option value = "'.$selectrow[0].'"'.$selected.'>'.$selectrow[1].'</option>';
-					    }
+							$tselect .=  '<option value = "'.$fitem[$look_id].'"'.$selected.'>'.$fitem[$look_col].'</option>';
+						}
+
 						$tselect .=  '</SELECT></td>';
-					}
+					}	
 				}
+
 			}
+
 
 			if ($item[$it]->view->table == 'True'){ // если для таблицы активна
 			    $maxi ++;
