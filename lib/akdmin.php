@@ -2,6 +2,57 @@
 
 require 'log.php';
 
+error_reporting (E_ALL);
+ini_set('display_errors', 1);
+
+
+function lockkey($table, $id){
+	return site_fold_ad.'log/'.$table.'_'.$id.'.lock';
+}
+
+
+function lock_id($table, $id, $user = '') {
+		
+	$lockfile = lockkey($table, $id);
+
+	if (file_exists($lockfile)){
+		return file_get_contents($lockfile);
+	}
+	else {
+		file_put_contents($lockfile, trim($user)); // rezerv
+		return False;
+	}
+	
+
+
+}
+
+function lock_status($table, $id) {
+	
+	$lockfile = lockkey($table, $id);
+	return file_exists($lockfile);
+	
+}
+
+
+function unlock_id($table, $id, $user){
+	
+	$lockfile = lockkey($table, $id);
+	$user = trim($user);
+
+	if (file_exists($lockfile)){
+		$name =  trim(file_get_contents($lockfile));
+	}
+	
+	if ($name == $user){
+		if (unlink($lockfile) == False)
+			write_log($_SERVER['PHP_AUTH_USER'].':ip='.$_SERVER['REMOTE_ADDR'].':error unlink: '.$lockfile, 'log/lock.log');
+	}
+
+	return;
+
+}
+
 
 class AKdmin {
 
@@ -129,6 +180,104 @@ function create($table, $xfile) {
 } 
 
 
+
+
+function config($fconfig) {
+
+	
+	configer::load($fconfig);
+	$set = configer::all();
+
+	// Выставляем папки по умолчанию
+
+	if (!isset($set['site']))
+		$set['SITE'] = 'http://'.str_replace('www', '', $_SERVER['HTTP_HOST']).'/';
+
+
+	if (!isset($set['AD']))
+		$set['AD'] = 'http://'.str_replace('www', '', $_SERVER['HTTP_HOST']).'/';
+
+	if (!isset($set['site_fold']))
+		$set['site_fold'] = $_SERVER['DOCUMENT_ROOT'];
+
+	
+
+	if (!isset($set['site_fold_ad'])) { //автоопределение папки 
+		
+		$maindir = dirname($fconfig);
+		
+		if (substr($maindir,-6) == 'config');
+			$maindir = substr($maindir, 0, -6);
+
+		$set['site_fold_ad'] =  $maindir;
+
+	}
+
+	if (!isset($set['APPPATH']))
+		$set['APPPATH'] = $set['site_fold_ad'].'app/';
+
+	if (!isset($set['site_ad']))
+		$set['site_ad'] = $set['AD'];
+
+	if (!isset($set['THEME']))
+		$set['THEME'] = $set['site_fold_ad'].'vendor/akdelf/akdmin/themes/office/';
+
+	if (!isset($set['PUB']))
+		$set['PUB'] = $set['AD'].'vendor/akdelf/akdmin/themes/office/pub/';
+
+	if (!isset($set['psite']))
+		$set['psite'] = $set['SITE'];
+
+	if (!isset($set['sysfold']))
+		$set['psite'] = $set['site_fold'].'system';
+
+	if (!isset($set['imgfold']))
+		$set['imgfold'] = $set['site_fold_ad'].'images/';
+
+	if (!isset($set['imgcache']))
+		$set['imgcache'] = $set['imgfold'].'preview/';
+
+if (!isset($set['imglink']))
+	$set['imglink'] =$set['AD'].'images/';
+
+
+	
+// подключаемся к БД
+if (isset($set['db'])) {
+	kORM::config($set['db']['db'], $set['db']['user'], $set['db']['password']);
+	
+	$link=@mysql_connect($set['db']['host'], $set['db']['user'], $set['db']['password']) or die ('Нет связи с базой : ' . mysql_error());
+	
+	mysql_select_db($set['db']['db'], $link) or die ('Can\'t use foo : ' . mysql_error());
+	mysql_query("SET NAMES UTF8");
+}
+
+
+// показываем ошибки
+if (isset($set['debug']) and $set['debug'] == 1){ 
+	error_reporting(E_ALL);
+	ini_set('display_errors', 1);
+}
+else {
+	ini_set('display_errors',0);
+}
+
+configer::load($set);
+configer::todefines();
+
+return $this;
+
+
+}
+
+
+
+
+
+
+
+
+
 function start(){
 
 	if (!defined('DEBUG')) {
@@ -150,9 +299,10 @@ function start(){
 		$group_id =  $user_row['group_id'];
 		$nameuser = $user_row['name'];
 		$region_id = $user_row['region_id'];
+
+		$this->username = $nameuser;
 	
 		$grrow = kORM::table('groupuser')->where('group_id', $group_id)->one();
-
 
 		if ($user_row != null) {
 			$_SESSION['group'] = $grrow['name'];
@@ -169,8 +319,8 @@ function start(){
 
 
 	$menufile = file_get_contents(APPPATH.'menu/'.$group_id.'.json');
+	
 	$menus = json_decode($menufile, true);
-
 
 	include(THEME.'views/layout/main.phtml');
 	return;
@@ -272,7 +422,7 @@ session_start();
 	$files = explode(',',$fstr);
 
 	foreach ($files as $file){
-		$fname = site_fold.str_replace('{%}', $increment, trim($file));
+		$fname = SITEPATH.str_replace('{%}', $increment, trim($file));
 		unlink($fname);
 	}
 
@@ -314,13 +464,19 @@ session_start();
 	$col_inc_name = (string)$citems->column_inc;
 
 	$count_sql = 'SELECT COUNT(*) FROM '.MAINTABLE.' WHERE '.$col_inc_name.'='.$values[$col_inc_name].' '.$citems->sql_where;
-	$countres = mysql_query ($count_sql) or write_log('Ошибка MySQL: '.mysql_error()); //подсчет
-	$sqlrows = mysql_num_rows($countres);
-	if ($sqlrows > 0) { //запись результатов
-		$row = mysql_fetch_array($countres, MYSQL_NUM);
-		$count = $row[0];//получаем кол-во
-		$sql_update = 'UPDATE '.$citems->table.' SET '. $citems->column.'='.$count.' WHERE '.$citems->t_inc.' = '.$values[$col_inc_name];
-		mysql_query($sql_update) or write_log('Ошибка MySQL: '.mysql_error());
+	$countres = mysql_query ($count_sql); 
+	if (!$countres)
+		 write_log('Ошибка MySQL: '.mysql_error()); //подсчет
+	else {	
+		$sqlrows = mysql_num_rows($countres);
+		if ($sqlrows > 0) { //запись результатов
+			$row = mysql_fetch_array($countres, MYSQL_NUM);
+			$count = $row[0];//получаем кол-во
+			$sql_update = 'UPDATE '.$citems->table.' SET '. $citems->column.'='.$count.' WHERE '.$citems->t_inc.' = '.$values[$col_inc_name];
+			$upd_result = mysql_query($sql_update);
+			if (!$upd_result)
+		    	write_log('Ошибка MySQL: '.mysql_error());
+		}    
 	}
 
 
@@ -466,6 +622,8 @@ function quote($txt)
 		return '';
 
 }
+
+
 
 
 
@@ -658,8 +816,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		$c_type = array();
 		$chet = False;
 
-		$this->mytable =  kORM::table($nametable); //главная текущая таблица
-
 		if ($action == 'selectall'){ ?>
 			<div id="caption"><?=$caption?>  Редактирование</div>
 		<?}
@@ -671,56 +827,47 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				$filters[$filters_count]['column'] = $item[$it]->title;
 				if (isset($_GET[$columnname])){
 					$colfilter = strip_tags($_GET[$columnname]);
-					$this->mytable->where($maintable.'.'.$item[$it]->column, $colfilter);
-					//$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
+					$where_filter .= SqlAddSpec($where_filter, 1).$maintable.'.'.$item[$it]->column.' = '.$colfilter;
 					if ($colfilter == 'null' || $colfilter == 0)
 						$nullfilter = True;
 				}
 				if ($action == 'selectall'){ //рисуем фильтры
-					
 					$filters_count ++;
-					
 					if ($filters_count == 1)
 						 echo '<p id = "titles">Фильтрация</p><div id = "filter">
 						 <table>';
 					
-					$look_id = (string)$item[$it]->lookup->id;
-					$look_col = (string)$item[$it]->lookup->column;
-
-					$ftable = kORM::table($item[$it]->lookup->table)->columns(array($look_id, $look_col));
+					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id, $item[$it]->lookup->column);
 					
 					if ($item[$it]->lookup->where != '')
-						$ftable->wh_str($item[$it]->lookup->where);
+						$ftable->wh($item[$it]->lookup->where);
+					
 					if ($item[$it]->lookup->order != '')
-						$ftable->ord_str($item[$it]->lookup->order);
-
+						$ftable->ord_str($item[$it] ->lookup->order);
+										
 					$fitems = $ftable->all();
 
-					if (isset($fitems)) {
-						
-						$ttitle .= '<td><b style = "color:#696969;">'.$item[$it]->title.'</b></td>';
+					if ($fitems !== null){
 						$id_select = $item[$it]->column;
-						$tselect .= '<td><SELECT ID="'.$id_select.'" NAME = "'.$id_select.'"  onChange="'.js_func('select_filter', array('select_id'=>$id_select, 'admin'=>$admin, 'param_name'=>$id_select)).'">';
-						$nullvalue = (isset($item[$it]->lookup->nulltxt)) ? (string)$item[$it]->lookup->nulltxt : 'нулевые значения';
-						$tselect .=  GreateMainFilter($admin, $columnname, $colfilter, $nullvalue); //рисуем (все, null, 0)
+						$fvalue = $item[$it]->lookup->column;
+						?>
+						
+						<td><b style = "color:#696969;"><?=$item[$it]->title?></b></td>
+						<td>
+							<SELECT ID="<?=$id_select?>" NAME = "<?=$id_select?>"  onChange="<?=js_func('select_filter', array('select_id'=>$id_select, 'admin'=>$admin, 'param_name'=>$id_select))?>">
+								<option value = ""></option>
+								<?foreach ($fitems as $fitem):?>
+									<option value = "<?echo $fitem["$id_select"];?>"><?echo $fitem["$fvalue"];?></option>
+								<?endforeach?>	
+							</SELECT>
+						</td>	
 
+					<?}?>
 
-
-						foreach($fitems as $fitem){
-
-							if ($colfilter == $fitem[$look_col])
-								$selected = ' selected="selected"';
-							else
-								$selected = '';
-							$tselect .=  '<option value = "'.$fitem[$look_id].'"'.$selected.'>'.$fitem[$look_col].'</option>';
-						}
-
-						$tselect .=  '</SELECT></td>';
-					}	
+					<?
+				
 				}
-
 			}
-
 
 			if ($item[$it]->view->table == 'True'){ // если для таблицы активна
 			    $maxi ++;
@@ -899,7 +1046,14 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				if ($action != 'selectrow') {
 					$chet = !$chet;
 					$tr_class = ($chet) ? 'nechet' : 'chet';
-					echo('<TR id = "'.$increment_value.'" class="'.$tr_class.'" onmouseover = "Rmarker(this.id, '."'market'".');" onmouseout = "Rmarker(this.id, '."'".$tr_class."'".');">');
+					
+					$lock_status = lock_status($nametable, $increment_value);
+					if ($lock_status)
+						$substyle = 'style="color: #999999;"';
+					else
+						$substyle = '';
+
+					echo('<TR id = "'.$increment_value.'" class="'.$tr_class.'" '.$substyle.' onmouseover = "Rmarker(this.id, '."'market'".');" onmouseout = "Rmarker(this.id, '."'".$tr_class."'".');">');
 				}
 				for ($a = 0; $a <= $maxi; $a++) {
 					switch ($component[$a]['type']) {
@@ -947,7 +1101,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						case 'file':
 							echo '<TD>';
 							if (in_array($selectrow[$a], array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
-								$wwwname = site.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
+								$wwwname = SITE.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
 								$fwidth = 100;
 								if ($component[$a]['width'])
 									$fwidth = $component[$a]['width'];
@@ -994,13 +1148,13 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 
 				if ($link_view != '') {
-					$vlink = site.str_replace('{%}', $increment_value, $link_view);
+					$vlink = SITE.str_replace('{%}', $increment_value, $link_view);
 					echo('<a href="#" onClick = "window.open('."'".$vlink."', 'Просмотр_".$caption."', config='height=600,width=800,scrollbars=1,resizable=1');".'" title = "Просмотр"><img id = "rbutton" src="'.PUB.'img/lupa.png" alt="Просмотр" /></a>');
 				}
 
 				if (isset($ex_table)):
 					$export_id=$increment_value.'_ex';?>
-					<span id="<?=$export_id?>"><a onclick="sendRequest('<?=site_ad?>admins.php?admin=<?=$admin?>&action=export&increment=<?=$increment_value?>', '<?=$export_id?>', getRequest);" title="Экспорт" href="#"><img alt="редактирование записи" src="<?=PUB?>img/export.png" id="rbutton"/></a></span>
+					<span id="<?=$export_id?>"><a onclick="sendRequest('<?=AD?>index.php?admin=<?=$admin?>&action=export&increment=<?=$increment_value?>', '<?=$export_id?>', getRequest);" title="Экспорт" href="#"><img alt="редактирование записи" src="<?=PUB?>img/export.png" id="rbutton"/></a></span>
 				<?endif;
 
 				//if ($_SESSION['readonly'] == 0)
@@ -1215,8 +1369,17 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
    case "edit":
    case "add":
 
+	$lockstring = lock_id($nametable, $increment_value, $_SERVER['PHP_AUTH_USER']);
+
+	
+	if ($action == 'edit') {
+		if ($lockstring !==  False and $lockstring !== '')
+			echo '<h2 style="color: red; font-weight: bold; ">Файл занят:&nbsp;'.$lockstring.'</h2>';
+	}	
+	
 	$act_str = ($action == 'edit') ? 'Изменение': 'Добавление';?>
-	<div id = "caption"><?=$caption?>. <?=$act_str?><span id="closed"><a href="javascript:StartLink('<?=$admin?>','cancel', '', '', '');">закрыть X</a></span></div>
+	
+	<div id="caption" name="mainform" ><?=$caption?>. <?=$act_str?> - <?=$_SERVER['PHP_AUTH_USER']?> <span id="closed"><a href="javascript:closeform('<?=$nametable?>','<?=$increment_value?>');">закрыть X</a></span></div>
 
 	<div id = "editor">
 	<?php
@@ -1240,7 +1403,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 	else
 		$f_acton = '&action=insert';
 
-	$pr_form = '<FORM NAME = "fMain" id="fMain" target = "tform" ACTION ="'.site_ad.'admins.php?admin='.$admin.$f_acton.'" METHOD = "post" enctype = "multipart/form-data" onSubmit="SubmitForm(this.id);">';
+	$pr_form = '<FORM NAME = "fMain" id="fMain" target = "tform" ACTION ="'.AD.'index.php?admin='.$admin.$f_acton.'" METHOD = "post" enctype = "multipart/form-data" onSubmit="SubmitForm(this.id);">';
 	$active_err = (isset($_SESSION['ferror']) && $_SESSION['ferror'] == 1) ? 1 :0; // узнаем ошибки ли это были или нет
 	$active_err = 0;
 	$_SESSION['ferror'] = 0; // сбрасываем на случай отмены
@@ -1367,10 +1530,10 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					if ($column_value !== '') {
 						$filename = $item[$f]->folder.'/'.$increment_value.'.'.$column_value;
 						$id = 'fl'.$column;
-						$wwwname = site.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
+						$wwwname = SITE.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
 						if (in_array($column_value, array('jpg', 'jpeg', 'png', 'gif', 'JPEG')))
 							$pr_form .= ' <p><IMG src="'.$wwwname.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
-						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".site_ad."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
+						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".AD."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
 					}
 					else 
 						$pr_form .= '<p>';
@@ -1452,7 +1615,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					if (isset($item[$f]->lookup->nulltxt))
 						$look_params['null'] = (string)$item[$f]->lookup->nulltxt;
 
-					$look_params['limit'] = 200;
+					$look_params['limit'] = 800;
 					$select_id = 'select_'.$column_id;
 					$attrs = array('id'=>$item[$f]->column, 'name'=>$item[$f]->column);
 
@@ -1629,7 +1792,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 							$txtonly = strip_tags($txtonly);
 							$txtonly = trim($txtonly);
 							$len = mb_strlen($txtonly, 'UTF-8');
-							if ($len > 1200) {
+							if ( $len > 1200 and in_array($_POST['sitepart_id'], array(1, 3, 21)) ) {
 								$values = null;
 								break;
 							}	
@@ -1746,6 +1909,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				if ($activation) {
 					if ($posts !== '') {
 						$values = chr(39).$values.chr(39);
+						$save_items[$posts] = $values;
 						$posts = '`'.$posts.'`';
 						if ($action == 'insert') {
 							$incolumns .= SqlAddSpec($incolumns, 0).$posts;
@@ -1766,7 +1930,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 							if ($values !== null)
 								$sql_update .= SqlAddSpec($sql_update, 0).$posts.' = '.$values;
 							
-							if ($type == 'checkdate' and $checkdated) { #публикация
+							if ($type == 'checkdate' and $checkdated) { # публикация
 
 								$actupdate = separ($item[$i]->fieldate).' = '.quote(date('Y-m-d G:i:s'));
 
@@ -1810,9 +1974,11 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		else if ($action == 'update')
 			$sqltext = 'UPDATE '.$maintable.' SET  '. $sql_update.' WHERE '.$increment.' = '."'".$increment_value."'";
 
+		$sqlres = mysql_query($sqltext);
 
-
-		$sqlres = mysql_query($sqltext) or write_log('Ошибка MySQL: '.mysql_error().' sql:'.$sqltext);
+		if (!$sqlres)
+		 	write_log('Ошибка MySQL: '.mysql_error().' sql:'.$sqltext);
+		
 		if ($sqlres) { //если запрос прошел успешно
 			if ($action == 'insert') {  // значение инкремента
 				$inc_indx = mysql_insert_id($this->link);
@@ -1821,6 +1987,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			else
 				$inc_indx = $increment_value;
 
+			$save_items[$increment] = $inc_indx;
 
 			//обработка экслюзивных значений
 			if (isset($exclusives)) {
@@ -1851,10 +2018,14 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 					$upd_sql = 'UPDATE '.$maintable.' SET '.$exc_key.'='.$excl['reset'].$exupdwhere;
 					write_log('exclusive: '.$upd_sql);
-					mysql_query($upd_sql) or write_log('Ошибка MySQL: '.mysql_error().' SQL:'.$upd_sql);
+					
+					$upd_result = mysql_query($upd_sql);
+					if (!$upd_result)
+						write_log('Ошибка MySQL: '.mysql_error().' SQL:'.$upd_sql);
 				}
 			}
 
+			
 			for ($l = 0; $l < $fa; $l ++) { //загрузка файло
 				$indx = $file_increment[$l];
 				$column = (string)$item[$indx]->column;
@@ -1862,7 +2033,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					if ($_FILES[$column]["name"] != '') {
 						$f_exp = fileexpansion($_FILES[$column]["name"]);
 						if (in_array($f_exp, array('jpg','jpeg','JPG', 'gif', 'png', 'swf'))) {
-							$newfilename = site_fold.$item[$indx]->folder.'/'.$inc_indx.'.'.$f_exp;
+							$newfilename = SITEPATH.$item[$indx]->folder.'/'.$inc_indx.'.'.$f_exp;
+							echo $newfilename;
 							if (copy($_FILES[$column]["tmp_name"], $newfilename)) {
 								$file_update = mysql_query('UPDATE '.$maintable.' SET '.$column.' = '."'".$f_exp."'".' WHERE '.$increment.' = '.$inc_indx);
 								chmod($newfilename, 0666);
@@ -1874,11 +2046,18 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						unlink($_FILES[$column]["tmp_name"]);
 					}
 				}
-				if (isset($_POST['DFile_'.$column])) //признак или несуществующего  файла
-						$file_update = mysql_query('UPDATE '.$maintable.' SET '.$column.' = '."''".' WHERE '.$increment.' = '.$inc_indx) or write_log('Ошибка MySQL: '.mysql_error());
-
+				if (isset($_POST['DFile_'.$column])){ //признак или несуществующего  файла
+						
+						$file_update = mysql_query('UPDATE '.$maintable.' SET '.$column.' = '."''".' WHERE '.$increment.' = '.$inc_indx);
+						if (!$file_update)
+							write_log('Ошибка MySQL: '.mysql_error());
+				
+				}		
 			}
 		}
+
+		if ($action == 'update')
+			unlock_id($nametable, $inc_indx, $_SERVER['PHP_AUTH_USER']);
 
 		$increm = ($action == 'insert') ? $inc_indx : $increment_value;
 
@@ -1887,9 +2066,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 		if ($history_save) {
 			$currdate = date('Y-m-d H:i:s'); //текущая дата
-			$histoty_file = site_fold_ad.'history/'.$nametable.'/'.date_to_url($currdate, False).'/'.$nametable.'_'.$increm.'_'.date_to_url($currdate, True,'_').'.sql'; //файл истории запроса sql
-			echo $histoty_file;
-			save($histoty_file, $sqltext); //сохраняем историю
+			$histoty_file = site_fold_ad.'history/'.$nametable.'/'.date_to_url($currdate, False).'/'.$nametable.'_'.$increm.'_'.date_to_url($currdate, True,'_').'.json'; //файл истории запроса sql
+			save($histoty_file, json_encode($save_items)); //сохраняем историю
 		}
 
 		if (isset($fcache))
@@ -1899,12 +2077,17 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		if (isset($count_items))
 			counts($count_items, $allvalues);
 
+		
 		write_log($_SERVER['PHP_AUTH_USER'].': '.'table='.$maintable.':action='.$action.':id='.$inc_indx.' save:'.$histoty_file, 'log/edition.log');
 		echo("<SCRIPT>window.parent.StartLink('".$admin."','".$admin_res."' ,'".$div_res."', '', '');</SCRIPT>");
 	}
 
 break;
 
+
+case "unlock":  
+	unlock_id($nametable, $increment_value, $_SERVER['PHP_AUTH_USER']);
+break;
 
   case "delete":
 
