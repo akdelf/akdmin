@@ -2,9 +2,6 @@
 
 require 'log.php';
 
-error_reporting (E_ALL);
-ini_set('display_errors', 1);
-
 
 function lockkey($table, $id){
 	return site_fold_ad.'log/'.$table.'_'.$id.'.lock';
@@ -63,7 +60,7 @@ private $order = array(); //
 private $limit = 20;
 private $page = 1;
 public $link = null;
-
+private $userid = 0;
 
 
 function xss($value) {
@@ -197,8 +194,10 @@ function config($fconfig) {
 	if (!isset($set['AD']))
 		$set['AD'] = 'http://'.str_replace('www', '', $_SERVER['HTTP_HOST']).'/';
 
-	if (!isset($set['site_fold']))
-		$set['site_fold'] = $_SERVER['DOCUMENT_ROOT'];
+	if (!isset($set['site_fold'])){
+		$set['site_fold'] = $_SERVER['DOCUMENT_ROOT'].'/';
+		$set['SITEPATH'] = $set['site_fold'];
+	}
 
 	
 
@@ -209,7 +208,7 @@ function config($fconfig) {
 		if (substr($maindir,-6) == 'config');
 			$maindir = substr($maindir, 0, -6);
 
-		$set['site_fold_ad'] =  $maindir;
+		$set['site_fold_ad'] =  $maindir.'/';
 
 	}
 
@@ -246,9 +245,9 @@ if (!isset($set['imglink']))
 if (isset($set['db'])) {
 	kORM::config($set['db']['db'], $set['db']['user'], $set['db']['password']);
 	
-	$link=@mysql_connect($set['db']['host'], $set['db']['user'], $set['db']['password']) or die ('Нет связи с базой : ' . mysql_error());
+	$this->link=@mysql_connect($set['db']['host'], $set['db']['user'], $set['db']['password']) or die ('Нет связи с базой : ' . mysql_error());
 	
-	mysql_select_db($set['db']['db'], $link) or die ('Can\'t use foo : ' . mysql_error());
+	mysql_select_db($set['db']['db'], $this->link) or die ('Can\'t use foo : ' . mysql_error());
 	mysql_query("SET NAMES UTF8");
 }
 
@@ -264,6 +263,8 @@ else {
 
 configer::load($set);
 configer::todefines();
+
+//print_r($set);
 
 return $this;
 
@@ -296,6 +297,7 @@ function start(){
 		session_start();
 		$_SESSION['user_id'] = $user_row['user_id'];
 		setcookie('user_id', $user_row['user_id']);
+		$this->userid = $user_row['user_id']; 
 		$group_id =  $user_row['group_id'];
 		$nameuser = $user_row['name'];
 		$region_id = $user_row['region_id'];
@@ -328,21 +330,26 @@ function start(){
 }
 
 
-
+function user_init() {
+	
+	$user_row = kORM::table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
+	
+	if (isset($user_row))
+		$this->userid = $user_row['user_id'];
+}
 
 
 function init() {
-
-	
 
 	if (count($_GET) == 0) {
 		$this->start();
 		return;
 	} 
 
+
+	$this->user_init();
+
 	
-
-
 session_start();
 
  require_once ('photos.php');
@@ -1555,7 +1562,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 								$accessed = False; //проверять у всех
 
 							//проверять
-							if ($accessed == False and ($column_value !== $_SESSION['user_id'])){
+							if ($accessed == False and ($column_value !== $this->userid)){
 								echo 'Нет доступа на редактирование!';
 								exit; //прерывание, нет доступа
 							}
@@ -1569,12 +1576,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					if ($action == 'edit' and $insert_type)
 						$user_value = $column_value;
 					else {
-						if (isset($_SESSION['user_id']))
-							$user_value = (int)$_SESSION['user_id'];
-						else if (isset($_COOKIE['user_id']))
-							$user_value = (int)$_COOKIE['user_id'];
-						else
-							$user_value = 0;
+						$user_value = $this->userid;
 					}
 
 					$pr_form .=  '<p><INPUT TYPE = "hidden" NAME = "'.$column.'"  value = "'.$user_value.'" ></p>';
@@ -1944,7 +1946,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 								# user
 								if (isset($item[$i]->curruser)) {
-									$usersql = 'UPDATE '.$maintable.' SET  '.separ($item[$i]->curruser).'='.$_SESSION['user_id'].' WHERE '.separ($increment).' = '."'".$increment_value."'";
+									$usersql = 'UPDATE '.$maintable.' SET  '.separ($item[$i]->curruser).'='.$this->userid.' WHERE '.separ($increment).' = '."'".$increment_value."'";
 									mysql_query($usersql) or write_log('Ошибка MySQL: '.mysql_error().' SQL:'.$usersql);
 								}
 							}
@@ -2066,7 +2068,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 		if ($history_save) {
 			$currdate = date('Y-m-d H:i:s'); //текущая дата
-			$histoty_file = site_fold_ad.'history/'.$nametable.'/'.date_to_url($currdate, False).'/'.$nametable.'_'.$increm.'_'.date_to_url($currdate, True,'_').'.json'; //файл истории запроса sql
+			$histoty_file = set('site_fold_ad').'history/'.$nametable.'/'.date_to_url($currdate, False).'/'.$nametable.'_'.$increm.'_'.date_to_url($currdate, True,'_').'.json'; //файл истории запроса sql
 			save($histoty_file, json_encode($save_items)); //сохраняем историю
 		}
 
