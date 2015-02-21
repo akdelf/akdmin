@@ -100,6 +100,18 @@ function GreateLink(admin, actions, param_name, param_value)
   
  }  
   
+function closeform(admin, increment) {
+	
+	TinyAdd(0);
+
+	document.getElementById("forms").style.visibility = "hidden";
+	
+	MyLink = script + '?admin=' + admin + '&action=unlock' + '&increment=' + increment;
+	httpRequest.open('GET', MyLink);
+	httpRequest.send(null);
+
+} 
+  
  
  function  StartLinkActive (admin, increment, field, data_field)
 	{
