@@ -278,12 +278,16 @@ function closeform(admin, increment) {
 	{
 		if (document.getElementById('chkupdate').checked){
 			buttupdates(admin);
-			setTimeout("autoupdate('" + admin + "')", 30000);
+			setTimeout("autoupdate('" + admin + "')", 20000);
 		}	
 	}
 				
 	function buttupdates(admin)
 	{
-		StartLink(admin, 'selecttable','datetable', '', '');
+		
+		if (document.getElementById("forms").style.visibility != "visible") {
+			StartLink(admin, 'selecttable','datetable', '', '');       
+		}
+		
 	}
 	
