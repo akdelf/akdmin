@@ -5,7 +5,7 @@
     "version": "1.4.0",
 
     "require":{
-        "php": ">=5.3.0",
+        "php": ">=5.2.0",
         "masterforweb/db_lite":"dev-master",
         "masterforweb/korm":"dev-master",
         "masterforweb/configer":"dev-master",
