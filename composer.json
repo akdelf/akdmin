@@ -5,8 +5,33 @@
     "version": "1.4.0",
 
     "require":{
-        "php": ">=5.2.0"
+        "php": ">=5.2.0",
+        "masterforweb/db_lite":"dev-master",
+        "masterforweb/korm":"dev-master",
+        "masterforweb/configer":"dev-master",
+        "masterforweb/thumbcache":"dev-master"
     },
+
+    "repositories":[
+        
+        {
+            "type":"git",
+            "url":"https://github.com/masterforweb/db_lite"
+        },
+        {
+            "type":"git",
+            "url":"https://github.com/masterforweb/korm"
+        },
+        {
+            "type":"git",
+            "url":"https://github.com/masterforweb/configer"
+        },
+        {
+            "type":"git",
+            "url":"https://github.com/masterforweb/thumbcache"
+        }
+        
+    ],
 
     "autoload": {
         "files": ["lib/akdmin.php"]
