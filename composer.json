@@ -7,7 +7,6 @@
     "require":{
         "php": ">=5.2.0",
         "masterforweb/db_lite":"dev-master",
-        "masterforweb/korm":"dev-master",
         "masterforweb/configer":"dev-master",
         "masterforweb/thumbcache":"dev-master"
     },
@@ -17,10 +16,6 @@
         {
             "type":"git",
             "url":"https://github.com/masterforweb/db_lite"
-        },
-        {
-            "type":"git",
-            "url":"https://github.com/masterforweb/korm"
         },
         {
             "type":"git",
