@@ -6,10 +6,10 @@
 
     "require":{
         "php": ">=5.2.0",
-        "masterforweb/db_lite":"dev-master",
-        "masterforweb/korm":"dev-master",
-        "masterforweb/configer":"dev-master",
-        "masterforweb/thumbcache":"dev-master"
+        "masterforweb/db_lite":">=0.2",
+        "masterforweb/korm":">=1.3",
+        "masterforweb/configer":">=1.1",
+        "masterforweb/thumbcache":">=0.2"
     },
 
     "repositories":[
