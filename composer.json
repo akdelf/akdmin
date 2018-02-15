@@ -2,7 +2,7 @@
     "name": "masterforweb/akdmin",
     "description": "php autoadmin",
     "keywords": ["admin"],
-    "version": "1.4.0",
+    "version": "2.4.0",
 
     "require":{
         "php": ">=5.2.0",
