@@ -281,10 +281,10 @@ function config($fconfig) {
 		$set['site_ad'] = $set['AD'];
 
 	if (!isset($set['THEME']))
-		$set['THEME'] = $set['site_fold_ad'].'vendor/akdelf/akdmin/themes/office/';
+		$set['THEME'] = $set['site_fold_ad'].'vendor/masterforweb/akdmin/themes/office/';
 
 	if (!isset($set['PUB']))
-		$set['PUB'] = $set['AD'].'vendor/akdelf/akdmin/themes/office/pub/';
+		$set['PUB'] = $set['AD'].'vendor/masterforweb/akdmin/themes/office/pub/';
 
 	if (!isset($set['psite']))
 		$set['psite'] = $set['SITE'];
@@ -1864,8 +1864,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					$values = (isset($_POST[$posts])) ? $_POST[$posts] : 0;
 					$subvalues = (isset($_POST[$posts."_2"])) ? $_POST[$posts."_2"] : 0;
 					if ($values == $subvalues) {
-						//$values = crypt($values, substr($values, 0, 2));	
-						$values = crypt($values, base64_encode($values));		
+						$values = crypt($values, substr($values, 0, 2));	
+						//$values = crypt($values, base64_encode($values));		
 					}
 					break;		
 				default:
