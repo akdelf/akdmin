@@ -320,6 +320,7 @@ if (isset($set['debug']) and $set['debug'] == 1){
 }
 else {
 	ini_set('display_errors',0);
+	error_reporting(0);
 }
 
 configer::load($set);
