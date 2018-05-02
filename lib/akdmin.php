@@ -1544,7 +1544,25 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					break;
 
 				case 'datetime':
-					$datetime =  ($column_value == '0000-00-00 00:00:00' or $column_value == '') ? date('Y:m:d G:i:s') : $column_value;
+
+					if (!isset($item[$f]->autodate))
+						$autodate = True;
+					else {
+						$autodate = (string)$item[$f]->autodate;
+						if ($autodate == 'False')
+							$autodate = False;
+						else
+							$autodate = True;
+					}					
+					
+					if ($autodate) {
+						$datetime =  ($column_value == '0000-00-00 00:00:00' or $column_value == '') ? date('Y:m:d G:i:s') : $column_value;
+					}
+					else{
+						$datetime = '';
+					}
+					
+
 					$pr_form .=  '<INPUT TYPE = "text" NAME = "'.$column.'" value = "'.$datetime.'" '.$blur.' /><a href="#" onClick = "javascript:CalendarDT('."'".$column."'".');"><img height="16" alt="Щелкните для открытия календаря" src="cal.gif" width="16" border="0"/></a><span id = "err_'.$column.'" class = "'.$class_valid.'">Неверный формат даты</span></p>';
 				break;
 				case 'datetimeauto':
