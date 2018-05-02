@@ -842,7 +842,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					else
 						$lookup_column = $item[$it]->lookup->column;
 
-					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id, $lookup_column);
+					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id.','.$lookup_column);
 					
 					if ($item[$it]->lookup->where != '')
 						$ftable->wh($item[$it]->lookup->where);
