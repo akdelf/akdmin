@@ -1866,6 +1866,13 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				case 'increment':
 					$activation = False;
 					break;
+				case 'datetime':
+					if (!isset($_POST[$posts]) or $_POST[$posts] == '')
+						$values = '0000-00-00 00:00:00';
+					else
+						$values = $_POST[$posts];
+					$activation = True;
+					break;	
 				case 'lookup':
 					$values = (isset($_POST[$posts])) ? (int)$_POST[$posts] : 0;
 					write_log($posts.'='.$values);
@@ -2023,6 +2030,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 			$sqltext = 'INSERT INTO '.$maintable.' ('.$incolumns.') VALUES ('.$value_insert.')';
 		else if ($action == 'update')
 			$sqltext = 'UPDATE '.$maintable.' SET  '. $sql_update.' WHERE '.$increment.' = '."'".$increment_value."'";
+
+		echo $sqltext."<br>";
 
 		$sqlres = mysqli_query($this->link, $sqltext);
 
