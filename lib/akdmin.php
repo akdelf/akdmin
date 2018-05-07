@@ -1556,7 +1556,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					}					
 					
 					if ($autodate) {
-						$datetime =  ($column_value == '0000-00-00 00:00:00' or $column_value == '') ? date('Y:m:d G:i:s') : $column_value;
+						$datetime =  ($column_value == '0000-00-00 00:00:00' or $column_value == '') ? date('Y-m-d G:i:s') : $column_value;
 					}
 					else{
 						$datetime = '';
