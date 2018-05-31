@@ -1625,7 +1625,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					$max = ($item[$f]->max == '') ? 100 : (int)$item[$f]->max;
 					$min = ($item[$f]->min == '') ? 1 : (int)$item[$f]->min;
 					$pr_form .= '<p><SELECT NAME = "'.$column.'">';
-					$pr_form .= '<OPTION VALUE = "">';
+					$pr_form .= '<OPTION VALUE = "0">';
 					for ($s = $min; $s <= $max; $s++) {
 						$checked = ($s == $column_value ) ? 'selected' : '';
 						$s_view = ($s == 0) ? ' ' : $s;
