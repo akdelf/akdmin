@@ -1105,8 +1105,20 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 						break;
 						case 'file':
 							echo '<TD>';
+							
+							$wwwname = '';
+
 							if (in_array($selectrow[$a], array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
 								$wwwname = SITE.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
+							}
+							else {
+								$fileexpansion = fileexpansion($selectrow[$a]);
+								if (in_array($fileexpansion, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
+									$wwwname = SITE.$component[$a]['folder'].'/'.$selectrow[$a];
+								}	
+							}
+
+							if ($wwwname !== '') {
 								$fwidth = 100;
 								if ($component[$a]['width'])
 									$fwidth = $component[$a]['width'];
