@@ -2043,8 +2043,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 		else if ($action == 'update')
 			$sqltext = 'UPDATE '.$maintable.' SET  '. $sql_update.' WHERE '.$increment.' = '."'".$increment_value."'";
 
-		echo $sqltext."<br>";
-
 		$sqlres = mysqli_query($this->link, $sqltext);
 
 		if (!$sqlres)
