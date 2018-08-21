@@ -227,7 +227,8 @@ function closeform(admin, increment) {
 			else {	
 				if 	(document.getElementById("forms").style.visibility == "visible"){
 					document.getElementById("forms").style.visibility = "hidden";
-					$('.mce-tinymce').hide();
+					//$('.mce-tinymce').hide();
+                   // $('.mceSimple').hide;
 					scroll(0, 0);
 				}	
 			}	

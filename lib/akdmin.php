@@ -740,6 +740,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
  $xml = $this->load($this->admin); //загружаем схему
 
+ //echo "admin:".$this->admin.' '.date('h:i:s')."<br>";
+
 
 
  // читаем главные параметры
@@ -1589,9 +1591,22 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					if ($column_value !== '') {
 						$filename = $item[$f]->folder.'/'.$increment_value.'.'.$column_value;
 						$id = 'fl'.$column;
-						$wwwname = SITE.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
-						if (in_array($column_value, array('jpg', 'jpeg', 'png', 'gif', 'JPEG')))
-							$pr_form .= ' <p><IMG src="'.$wwwname.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
+                        $nocacheprefix = date('Y_m_d_h_i_s');
+						$wwwname = '';
+
+                        if (in_array($column_value, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
+                            $wwwname = SITE.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
+                        }
+                        else {
+                            $fileexpansion = fileexpansion($column_value);
+                            if (in_array($fileexpansion, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
+                                $wwwname = SITE.$item[$f]->folder.'/'.$column_value;
+                            }
+                        }
+                        
+
+						if ($wwwname !== '')
+							$pr_form .= ' <p><IMG src="'.$wwwname.'?ver='.$nocacheprefix.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
 						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".AD."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
 						$pr_form .= '<span style="margin-left: 8px;"><a href="'.$wwwname.'">Скачать</a></span>';
 					}
@@ -2157,7 +2172,9 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 		
 		write_log($_SERVER['PHP_AUTH_USER'].': '.'table='.$maintable.':action='.$action.':id='.$inc_indx.' save:'.$histoty_file, 'log/edition.log');
-		echo("<SCRIPT>window.parent.StartLink('".$admin."','".$admin_res."' ,'".$div_res."', '', '');</SCRIPT>");
+
+
+		echo(trim("<SCRIPT>window.parent.StartLink('".trim($admin)."','".trim($admin_res)."' ,'".trim($div_res)."', '', '');</SCRIPT>"));
 	}
 
 break;
@@ -2181,6 +2198,7 @@ break;
 		delete_cache($fcache, $increment_value);
 
 	write_log($_SERVER['PHP_AUTH_USER'].': '.'table='.$maintable.':action=delete :id='.$increment_value, 'log/edition.log');
+
 	echo("<SCRIPT>window.parent.StartLink('".$admin."', 'selectall', 'content', '', '');</SCRIPT>");
 
    break;
