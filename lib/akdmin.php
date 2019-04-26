@@ -51,6 +51,23 @@ function unlock_id($table, $id, $user){
 }
 
 
+
+function fileimg($img, $id, $folder){
+
+    if (in_array($img, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
+        $fileimg = $folder . '/' . $id . '.' . $img;
+    }
+    else {
+        $fileimg = $folder . '/' . $img;
+    }
+
+    return $fileimg;
+
+}
+
+
+
+
 class AKdmin {
 
 private $admin = ''; 
@@ -281,10 +298,10 @@ function config($fconfig) {
 		$set['site_ad'] = $set['AD'];
 
 	if (!isset($set['THEME']))
-		$set['THEME'] = $set['site_fold_ad'].'vendor/masterforweb/akdmin/themes/office/';
+		$set['THEME'] = $set['site_fold_ad'].'vendor/akdelf/akdmin/themes/office/';
 
 	if (!isset($set['PUB']))
-		$set['PUB'] = $set['AD'].'vendor/masterforweb/akdmin/themes/office/pub/';
+		$set['PUB'] = $set['AD'].'vendor/akdelf/akdmin/themes/office/pub/';
 
 	if (!isset($set['psite']))
 		$set['psite'] = $set['SITE'];
@@ -320,7 +337,6 @@ if (isset($set['debug']) and $set['debug'] == 1){
 }
 else {
 	ini_set('display_errors',0);
-	error_reporting(0);
 }
 
 configer::load($set);
@@ -740,8 +756,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
  $xml = $this->load($this->admin); //загружаем схему
 
- //echo "admin:".$this->admin.' '.date('h:i:s')."<br>";
-
 
 
  // читаем главные параметры
@@ -844,7 +858,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					else
 						$lookup_column = $item[$it]->lookup->column;
 
-					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id.','.$lookup_column);
+					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id, $lookup_column);
 					
 					if ($item[$it]->lookup->where != '')
 						$ftable->wh($item[$it]->lookup->where);
@@ -891,6 +905,9 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				if (isset($item[$it]->folder)) $component[$maxi]['width'] = (string)$item[$it]->width;
 				if (isset($item[$it]->fieldate))
 					$component[$maxi]['fieldate'] = (string)$item[$it]->fieldate;
+                if (isset($item[$it]->version))
+                    $component[$maxi]['version'] = (string)$item[$it]->version;
+
 				/*if (isset($item[$it]->curruser))
 					$component[$maxi]['curruser'] = (string)$item[$it]->curruser;*/
 				$new_order_type = '';
@@ -1106,30 +1123,21 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 							echo('</TD>');
 						break;
 						case 'file':
-							echo '<TD>';
-							
-							$wwwname = '';
 
-							if (in_array($selectrow[$a], array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
-								$wwwname = SITE.$component[$a]['folder'].'/'.$increment_value.'.'.$selectrow[$a];
-							}
-							else {
-								$fileexpansion = fileexpansion($selectrow[$a]);
-								if (in_array($fileexpansion, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
-									$wwwname = SITE.$component[$a]['folder'].'/'.$selectrow[$a];
-								}	
-							}
+						    echo '<TD>';
 
-							if ($wwwname !== '') {
-								$fwidth = 100;
-								if ($component[$a]['width'])
-									$fwidth = $component[$a]['width'];
-								else
-									$fwidth = 100;
-								$nocacheprefix = date('Y_m_d_h_i_s');
-								echo'<a href="'.$wwwname.'" target="_blank"><img src ="'.$wwwname.'?ver='.$nocacheprefix.'" width="'.$fwidth.'"></a>';
-							}	
+						    $wwwname = SITE.fileimg($selectrow[$a], $increment_value, $component[$a]['folder']);
+
+                            $fwidth = 100;
+                            if ($component[$a]['width'])
+                                $fwidth = $component[$a]['width'];
+                            else
+                                $fwidth = 100;
+                            $nocacheprefix = date('Y_m_d_h_i_s');
+                            echo'<a href="'.$wwwname.'" target="_blank"><img src ="'.$wwwname.'" width="'.$fwidth.'"></a>';
+
 							echo '</TD>';
+
 						break;
 						default:
 							$fulltext = $selectrow[$a];
@@ -1168,7 +1176,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 
 				if ($link_view != '') {
-					$vlink = SITE.str_replace('{%}', $increment_value, $link_view);
+					$vlink = str_replace('{%}', $increment_value, $link_view);
 					echo('<a href="#" onClick = "window.open('."'".$vlink."', 'Просмотр_".$caption."', config='height=600,width=800,scrollbars=1,resizable=1');".'" title = "Просмотр"><img id = "rbutton" src="'.PUB.'img/lupa.png" alt="Просмотр" /></a>');
 				}
 
@@ -1558,25 +1566,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					break;
 
 				case 'datetime':
-
-					if (!isset($item[$f]->autodate))
-						$autodate = True;
-					else {
-						$autodate = (string)$item[$f]->autodate;
-						if ($autodate == 'False')
-							$autodate = False;
-						else
-							$autodate = True;
-					}					
-					
-					if ($autodate) {
-						$datetime =  ($column_value == '0000-00-00 00:00:00' or $column_value == '') ? date('Y-m-d G:i:s') : $column_value;
-					}
-					else{
-						$datetime = '';
-					}
-					
-
+					$datetime =  ($column_value == '0000-00-00 00:00:00' or $column_value == '') ? date('Y:m:d G:i:s') : $column_value;
 					$pr_form .=  '<INPUT TYPE = "text" NAME = "'.$column.'" value = "'.$datetime.'" '.$blur.' /><a href="#" onClick = "javascript:CalendarDT('."'".$column."'".');"><img height="16" alt="Щелкните для открытия календаря" src="cal.gif" width="16" border="0"/></a><span id = "err_'.$column.'" class = "'.$class_valid.'">Неверный формат даты</span></p>';
 				break;
 				case 'datetimeauto':
@@ -1589,24 +1579,12 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					break;
 				case 'file':
 					if ($column_value !== '') {
-						$filename = $item[$f]->folder.'/'.$increment_value.'.'.$column_value;
-						$id = 'fl'.$column;
-                        $nocacheprefix = date('Y_m_d_h_i_s');
-						$wwwname = '';
 
-                        if (in_array($column_value, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
-                            $wwwname = SITE.$item[$f]->folder.'/'.$increment_value.'.'.$column_value;
-                        }
-                        else {
-                            $fileexpansion = fileexpansion($column_value);
-                            if (in_array($fileexpansion, array('jpg', 'jpeg', 'gif', 'png', 'JPG'))) {
-                                $wwwname = SITE.$item[$f]->folder.'/'.$column_value;
-                            }
-                        }
-                        
+					    $filename = fileimg($column_value, $increment_value, $item[$f]->folder);
+					    $wwwname = SITE.$filename;
 
-						if ($wwwname !== '')
-							$pr_form .= ' <p><IMG src="'.$wwwname.'?ver='.$nocacheprefix.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
+					    $id = 'fl'.$column;
+						$pr_form .= ' <p><IMG src="'.$wwwname.'" width="100" onClick = "window.open('."'".$wwwname."', 'Просмотр_".$wwwname."', config='height=600,width=800');".'" title="чтобы увеличить - кликните" /></span>';
 						$pr_form .= '<p><span id = "'.$id.'"><INPUT  TYPE = "button" VALUE = "Удалить файл" onClick = "'."sendRequest('".AD."deletefile.php?file=".$filename."&id=".$increment_value."&column=".$column."', '".$id."', getRequest);".'" /></span>';
 						$pr_form .= '<span style="margin-left: 8px;"><a href="'.$wwwname.'">Скачать</a></span>';
 					}
@@ -1652,7 +1630,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					$max = ($item[$f]->max == '') ? 100 : (int)$item[$f]->max;
 					$min = ($item[$f]->min == '') ? 1 : (int)$item[$f]->min;
 					$pr_form .= '<p><SELECT NAME = "'.$column.'">';
-					$pr_form .= '<OPTION VALUE = "0">';
+					$pr_form .= '<OPTION VALUE = "">';
 					for ($s = $min; $s <= $max; $s++) {
 						$checked = ($s == $column_value ) ? 'selected' : '';
 						$s_view = ($s == 0) ? ' ' : $s;
@@ -1893,13 +1871,6 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				case 'increment':
 					$activation = False;
 					break;
-				case 'datetime':
-					if (!isset($_POST[$posts]) or $_POST[$posts] == '')
-						$values = '0000-00-00 00:00:00';
-					else
-						$values = $_POST[$posts];
-					$activation = True;
-					break;	
 				case 'lookup':
 					$values = (isset($_POST[$posts])) ? (int)$_POST[$posts] : 0;
 					write_log($posts.'='.$values);
@@ -1917,8 +1888,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					$values = (isset($_POST[$posts])) ? $_POST[$posts] : 0;
 					$subvalues = (isset($_POST[$posts."_2"])) ? $_POST[$posts."_2"] : 0;
 					if ($values == $subvalues) {
-						$values = crypt($values, substr($values, 0, 2));	
-						//$values = crypt($values, base64_encode($values));		
+						//$values = crypt($values, substr($values, 0, 2));	
+						$values = crypt($values, base64_encode($values));		
 					}
 					break;		
 				default:
@@ -1926,8 +1897,13 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					$values = str_replace('img src="../images', 'img src="http://www.argumenti.ru/images', $values); //хак для полного адреса фоток
 					$values = str_replace('img src="../photo', 'img src="http://www.argumenti.ru/photo', $values); //хак для полного адреса фоток
 					//$values = preg_replace('/<!--.*-->/Uis', '', $values);
-					if ($type == 'text')
-						$values = $filter->source($values)->entity('html');
+					if ($type == 'text') {
+                        $values = $filter->source($values)->entity('html');
+                    }
+					elseif ($type == 'textareatiny'){
+                        $values = str_replace('<pre>', '<p>', $values);
+                    }
+
 					$values = addslashes($values);
 					if (isset($item[$i]->folder)) {
 						file_put_contents($item[$i]->folder.$increment_value.'.html',$values);
@@ -2116,15 +2092,26 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 				if(isset($_FILES[$column])){
 					if ($_FILES[$column]["name"] != '') {
 						$f_exp = fileexpansion($_FILES[$column]["name"]);
-						if (in_array($f_exp, array('jpg','jpeg','JPG', 'gif', 'png', 'swf'))){
+						//if (in_array($f_exp, array('jpg','jpeg','JPG', 'gif', 'png', 'swf'))){
 							$upfolder = SITEPATH.$item[$indx]->folder;
-							$newfilename = $upfolder.'/'.$inc_indx.'.'.$f_exp;
-							if (file_exists($_FILES[$column]["tmp_name"])){
+
+							 if (isset($item[$indx]->dateversion)) {
+							     $currversion = date('Ymdhis');
+                                 $newfname =  $currversion.'-'.$inc_indx.'.'.$f_exp;
+                                 $newfilename = $upfolder.'/'.$newfname;
+							 }
+							 else {
+                                 $newfname = $f_exp;
+                                 $newfilename = $upfolder.'/'.$newfname.'.'.$f_exp;
+							 }
+
+
+							 if (file_exists($_FILES[$column]["tmp_name"])){
 								if (!is_writable($upfolder))
 									echo 'нет прав на запись в папку '.$upfolder;
 								else {
 									if (copy($_FILES[$column]["tmp_name"], $newfilename))
-										$file_update = mysqli_query($this->link, 'UPDATE '.$maintable.' SET '.$column.' = '."'".$f_exp."'".' WHERE '.$increment.' = '.$inc_indx);
+										$file_update = mysqli_query($this->link, 'UPDATE '.$maintable.' SET '.$column.' = '."'".$newfname."'".' WHERE '.$increment.' = '.$inc_indx);
 									else
 										echo 'не удалось скопировать '.$newfilename;
 								}
@@ -2135,7 +2122,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 								echo 'не найден файл '.$_FILES[$column]["tmp_name"];
 							
 						}
-					}	
+					//}
 			
 				}
 				if (isset($_POST['DFile_'.$column])){ //признак или несуществующего  файла
@@ -2172,9 +2159,7 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 
 		
 		write_log($_SERVER['PHP_AUTH_USER'].': '.'table='.$maintable.':action='.$action.':id='.$inc_indx.' save:'.$histoty_file, 'log/edition.log');
-
-
-		echo(trim("<SCRIPT>window.parent.StartLink('".trim($admin)."','".trim($admin_res)."' ,'".trim($div_res)."', '', '');</SCRIPT>"));
+		echo("<SCRIPT>window.parent.StartLink('".$admin."','".$admin_res."' ,'".$div_res."', '', '');</SCRIPT>");
 	}
 
 break;
@@ -2198,7 +2183,6 @@ break;
 		delete_cache($fcache, $increment_value);
 
 	write_log($_SERVER['PHP_AUTH_USER'].': '.'table='.$maintable.':action=delete :id='.$increment_value, 'log/edition.log');
-
 	echo("<SCRIPT>window.parent.StartLink('".$admin."', 'selectall', 'content', '', '');</SCRIPT>");
 
    break;
