@@ -858,8 +858,8 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					else
 						$lookup_column = $item[$it]->lookup->column;
 
-					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id, $lookup_column);
-					
+					$ftable = kORM::table($item[$it]->lookup->table)->select($item[$it]->lookup->id.','.$lookup_column);
+
 					if ($item[$it]->lookup->where != '')
 						$ftable->wh($item[$it]->lookup->where);
 					
@@ -869,16 +869,16 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					$fitems = $ftable->all();
 
 					if ($fitems !== null){
-						$id_select = $item[$it]->column;
-						$fvalue = $lookup_column;
+						$id_select = (string)$item[$it]->lookup->id;
+						$fvalue = (string)$lookup_column;
 						?>
-						
-						<td><b style = "color:#696969;"><?=$item[$it]->title?></b></td>
+
+                        <td><b style = "color:#696969;"><?=$item[$it]->title?></b></td>
 						<td>
 							<SELECT ID="<?=$id_select?>" NAME = "<?=$id_select?>"  onChange="<?=js_func('select_filter', array('select_id'=>$id_select, 'admin'=>$admin, 'param_name'=>$id_select))?>">
 								<option value = ""></option>
 								<?foreach ($fitems as $fitem):?>
-									<option value = "<?echo $fitem["$id_select"];?>"><?echo $fitem["$fvalue"];?></option>
+                                    <option value = "<?echo $fitem[$id_select];?>"><?echo $fitem[$fvalue];?></option>
 								<?endforeach?>	
 							</SELECT>
 						</td>	
