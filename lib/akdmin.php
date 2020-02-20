@@ -291,6 +291,7 @@ function config($fconfig) {
 
 	}
 
+	
 	if (!isset($set['APPPATH']))
 		$set['APPPATH'] = $set['site_fold_ad'].'app/';
 
@@ -301,7 +302,7 @@ function config($fconfig) {
 		$set['THEME'] = $set['site_fold_ad'].'vendor/masterforweb/akdmin/themes/office/';
 
 	if (!isset($set['PUB']))
-		$set['PUB'] = $set['AD'].'vendor/akdelf/masterforweb/themes/office/pub/';
+		$set['PUB'] = $set['AD'].'vendor/masterforweb/akdmin/themes/office/pub/';
 
 	if (!isset($set['psite']))
 		$set['psite'] = $set['SITE'];
