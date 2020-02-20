@@ -291,6 +291,7 @@ function config($fconfig) {
 
 	}
 
+	
 	if (!isset($set['APPPATH']))
 		$set['APPPATH'] = $set['site_fold_ad'].'app/';
 
