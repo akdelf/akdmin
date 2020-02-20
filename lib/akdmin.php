@@ -298,10 +298,10 @@ function config($fconfig) {
 		$set['site_ad'] = $set['AD'];
 
 	if (!isset($set['THEME']))
-		$set['THEME'] = $set['site_fold_ad'].'vendor/akdelf/akdmin/themes/office/';
+		$set['THEME'] = $set['site_fold_ad'].'vendor/masterforweb/akdmin/themes/office/';
 
 	if (!isset($set['PUB']))
-		$set['PUB'] = $set['AD'].'vendor/akdelf/akdmin/themes/office/pub/';
+		$set['PUB'] = $set['AD'].'vendor/akdelf/masterforweb/themes/office/pub/';
 
 	if (!isset($set['psite']))
 		$set['psite'] = $set['SITE'];
